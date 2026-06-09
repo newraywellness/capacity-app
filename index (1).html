@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>The Capacity Method · New Ray Wellness</title>
+
+<!-- fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Sacramento&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- React + Babel + Supabase (loaded from CDN, no build step needed) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  html, body { background: #181410; }
+  ::-webkit-scrollbar { width: 0; }
+  input { font-family: 'Nunito Sans', sans-serif; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; height:6px; border-radius:999px; outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#F2EADD; cursor:pointer; border:3px solid var(--accent,#D08560); }
+  input[type=range]::-moz-range-thumb{ width:26px; height:26px; border-radius:50%; background:#F2EADD; cursor:pointer; border:3px solid var(--accent,#D08560); }
+  @keyframes breathe { 0%,100%{ opacity:.55 } 50%{ opacity:.9 } }
+  .glow-breathe{ animation: breathe 6s ease-in-out infinite; }
+  .fade-in{ animation: fadeIn .5s ease both; }
+  @keyframes fadeIn { from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+// ============================================================
+//  YOUR KEYS  — if you ever regenerate them, change them here
+// ============================================================
+const SUPABASE_URL = "https://gidezdugmwtemohkkeyr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bmt_uXzHvBlMTBpvkkRJPA_VpsEfPnp";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---------------- design tokens ----------------
+const BASE = { bg:"#181410", bg2:"#211B15", surface:"#2A2219", surface2:"#352B20",
+  border:"rgba(217,199,172,0.12)", cream:"#F2EADD", creamDim:"#D9C7AC", taupe:"#A8987F",
+  terracotta:"#D08560", terracottaDeep:"#B56A47" };
+const THEMES = {
+  none:{accent:BASE.terracotta,glow:"208,133,96",tint:"rgba(208,133,96,0.05)",label:"",range:"",word:""},
+  red:{accent:"#DC6F5E",glow:"220,111,94",tint:"rgba(220,111,94,0.10)",label:"Red Day",range:"0–35%",word:"Survive · stabilize · simplify"},
+  yellow:{accent:"#E3AC5E",glow:"227,172,94",tint:"rgba(227,172,94,0.10)",label:"Yellow Day",range:"36–70%",word:"Steady progress, protect tomorrow"},
+  green:{accent:"#94AC6E",glow:"148,172,110",tint:"rgba(148,172,110,0.10)",label:"Green Day",range:"71–100%",word:"Plan · grow · build"},
+};
+const colorFromPct = p => p<=35?"red":p<=70?"yellow":"green";
+const FACTORS=["Poor sleep","Interrupted sleep","Stress","Work demands","Parenting","Hormonal changes","Anxiety","Mental load","Illness","Grief or loss"];
+const SUPPORTS=["Rest","Food","Water","Quiet","Connection","Movement","Time outside","Saying no","Slowing down"];
+const QUOTES={red:"Capacity is not character. A Red Day means your system needs support, not pressure.",
+  yellow:"Most of life is not lived on Green Days. The goal is to do enough — not everything.",
+  green:"Use the energy you have wisely. Build on the good days without spending tomorrow.",
+  none:"Stop expecting Green Day performance on Red Day energy."};
+
+// ============================================================
+//  ROOT — decides: loading / login / membership-gate / app
+// ============================================================
+function Root(){
+  const [session,setSession]=useState(undefined); // undefined=loading
+  const [profile,setProfile]=useState(null);
+  const [loadingProfile,setLoadingProfile]=useState(false);
+
+  useEffect(()=>{
+    db.auth.getSession().then(({data})=>setSession(data.session));
+    const {data:sub}=db.auth.onAuthStateChange((_e,s)=>setSession(s));
+    return ()=>sub.subscription.unsubscribe();
+  },[]);
+
+  useEffect(()=>{
+    if(!session){ setProfile(null); return; }
+    setLoadingProfile(true);
+    db.from("profiles").select("*").eq("id",session.user.id).single()
+      .then(({data})=>{ setProfile(data); setLoadingProfile(false); });
+  },[session]);
+
+  const wrap=(child)=>(<div style={{fontFamily:"'Nunito Sans',sans-serif",background:BASE.bg,color:BASE.cream,minHeight:"100vh",maxWidth:440,margin:"0 auto"}}>{child}</div>);
+
+  if(session===undefined) return wrap(<Splash text="Loading…"/>);
+  if(!session) return wrap(<Auth/>);
+  if(loadingProfile||!profile) return wrap(<Splash text="Getting things ready…"/>);
+  if(!profile.has_membership && !profile.is_owner) return wrap(<MembershipNeeded email={profile.email}/>);
+  return <AppShell session={session} profile={profile}/>;
+}
+
+function Splash({text}){
+  return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}>
+    <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:46,color:BASE.cream}}>New Ray</div>
+    <div style={{color:BASE.taupe,marginTop:10,fontSize:13}}>{text}</div>
+  </div>);
+}
+
+// ============================================================
+//  AUTH — sign up / log in
+// ============================================================
+function Auth(){
+  const [mode,setMode]=useState("login");
+  const [email,setEmail]=useState(""); const [pw,setPw]=useState("");
+  const [name,setName]=useState(""); const [msg,setMsg]=useState(""); const [busy,setBusy]=useState(false);
+  const A=BASE.terracotta;
+
+  async function go(){
+    setBusy(true); setMsg("");
+    if(mode==="signup"){
+      const {data,error}=await db.auth.signUp({email,password:pw});
+      if(error){ setMsg(error.message); setBusy(false); return; }
+      if(data.user && name) await db.from("profiles").update({display_name:name}).eq("id",data.user.id);
+    } else {
+      const {error}=await db.auth.signInWithPassword({email,password:pw});
+      if(error){ setMsg(error.message); setBusy(false); return; }
+    }
+    setBusy(false);
+  }
+
+  return (<div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px"}}>
+    <div style={{textAlign:"center",marginBottom:36}}>
+      <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:52,color:BASE.cream}}>New Ray</div>
+      <div style={{fontSize:11,letterSpacing:4,textTransform:"uppercase",color:BASE.taupe,marginTop:6}}>The Capacity Method</div>
+    </div>
+    <p style={{fontFamily:"'Sacramento',cursive",fontSize:26,textAlign:"center",color:A,marginBottom:28}}>“Capacity is not character.”</p>
+
+    {mode==="signup" && <Field label="Your name" value={name} onChange={setName} placeholder="First name"/>}
+    <Field label="Email" value={email} onChange={setEmail} placeholder="you@email.com" type="email"/>
+    <Field label="Password" value={pw} onChange={setPw} placeholder="••••••••" type="password"/>
+
+    {msg && <div style={{color:"#DC6F5E",fontSize:13,marginBottom:14,textAlign:"center"}}>{msg}</div>}
+
+    <button onClick={go} disabled={busy} style={{padding:"15px",borderRadius:14,border:"none",cursor:"pointer",background:A,color:"#1a140f",fontSize:15,fontWeight:700,opacity:busy?.6:1}}>
+      {busy?"…":(mode==="signup"?"Create my account":"Log in")}
+    </button>
+
+    <div onClick={()=>{setMode(mode==="signup"?"login":"signup");setMsg("");}} style={{textAlign:"center",marginTop:20,color:BASE.taupe,fontSize:13,cursor:"pointer"}}>
+      {mode==="signup"?"Already have an account? Log in":"New here? Create an account"}
+    </div>
+  </div>);
+}
+function Field({label,value,onChange,placeholder,type="text"}){
+  return (<div style={{marginBottom:16}}>
+    <div style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase",color:BASE.taupe,fontWeight:700,marginBottom:8}}>{label}</div>
+    <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+      style={{width:"100%",padding:"14px 15px",borderRadius:12,background:BASE.surface,border:`1px solid ${BASE.border}`,color:BASE.cream,fontSize:15,outline:"none"}}/>
+  </div>);
+}
+
+// ============================================================
+//  MEMBERSHIP GATE
+// ============================================================
+function MembershipNeeded({email}){
+  return (<div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 30px",textAlign:"center"}}>
+    <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:46,color:BASE.cream,marginBottom:8}}>New Ray</div>
+    <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,marginBottom:14}}>Your membership isn't active yet</p>
+    <p style={{color:BASE.creamDim,fontSize:14,lineHeight:1.6,marginBottom:24}}>
+      You're logged in as {email}. Once your membership is active, this is where your daily check-in and library will open.
+    </p>
+    <p style={{color:BASE.taupe,fontSize:12,lineHeight:1.6,marginBottom:24}}>
+      (Setup note for you, Vanessa: this is where Shopify will connect. To test the app right now, open your Supabase profiles table, find your row, and set has_membership to true — then refresh.)
+    </p>
+    <button onClick={()=>db.auth.signOut()} style={{padding:"13px",borderRadius:12,border:`1px solid ${BASE.border}`,background:"transparent",color:BASE.creamDim,fontSize:14,cursor:"pointer"}}>Log out</button>
+  </div>);
+}
+
+// ============================================================
+//  APP SHELL — tabs, theming, data loading
+// ============================================================
+function AppShell({session,profile}){
+  const [tab,setTab]=useState("today");
+  const [pct,setPct]=useState(30);
+  const [checkedIn,setCheckedIn]=useState(false);
+  const [factors,setFactors]=useState([]);
+  const [supports,setSupports]=useState([]);
+  const [oneThing,setOneThing]=useState("");
+  const [baseline,setBaseline]=useState([false,false,false,false,false]);
+  const [history,setHistory]=useState([]);
+  const [content,setContent]=useState([]);
+  const [saving,setSaving]=useState(false);
+  const [saveErr,setSaveErr]=useState("");
+
+  const uid=session.user.id;
+
+  async function loadHistory(){
+    const {data}=await db.from("checkins").select("*").eq("user_id",uid).order("date",{ascending:true});
+    setHistory((data||[]).map(d=>({date:new Date(d.date),pct:d.pct,color:d.color})));
+    const today=new Date().toISOString().slice(0,10);
+    if((data||[]).some(d=>d.date===today)) setCheckedIn(true);
+  }
+  async function loadContent(){
+    const {data}=await db.from("content").select("*").order("sort_order",{ascending:true});
+    setContent(data||[]);
+  }
+  useEffect(()=>{ loadHistory(); loadContent(); },[]);
+
+  const themeKey=checkedIn?colorFromPct(pct):"none";
+  const T=THEMES[themeKey];
+  const toggle=(arr,set,v)=>set(arr.includes(v)?arr.filter(x=>x!==v):[...arr,v]);
+
+  async function saveCheckin(){
+    setSaving(true); setSaveErr("");
+    const color=colorFromPct(pct);
+    const today=new Date().toISOString().slice(0,10);
+    const {error}=await db.from("checkins").upsert({user_id:uid,date:today,pct,color,factors,supports,one_thing:oneThing},{onConflict:"user_id,date"});
+    setSaving(false);
+    if(error){ setSaveErr(error.message); return; }
+    setCheckedIn(true); loadHistory();
+  }
+
+  return (<div style={{"--accent":T.accent,fontFamily:"'Nunito Sans',sans-serif",background:BASE.bg,color:BASE.cream,minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",overflow:"hidden"}}>
+    <div className="glow-breathe" style={{position:"absolute",top:0,left:0,right:0,height:360,background:`radial-gradient(120% 80% at 50% 0%, rgba(${T.glow},0.22) 0%, transparent 60%)`,pointerEvents:"none",transition:"background .8s ease"}}/>
+    <div style={{position:"relative",padding:"0 0 96px"}}>
+      <header style={{padding:"22px 22px 6px",textAlign:"center"}}>
+        <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:40,lineHeight:1,color:BASE.cream}}>New Ray</div>
+        <div style={{fontSize:11,letterSpacing:4,textTransform:"uppercase",color:BASE.taupe,marginTop:6}}>The Capacity Method</div>
+      </header>
+
+      {tab==="today" && <Today {...{T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving,saveErr}}/>}
+      {tab==="library" && <Library T={T} content={content} hasCourse={profile.has_course}/>}
+      {tab==="trends" && <Trends T={T} history={history}/>}
+      {tab==="about" && <About T={T} onLogout={()=>db.auth.signOut()}/>}
+    </div>
+
+    <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"rgba(24,20,16,0.92)",backdropFilter:"blur(12px)",borderTop:`0.5px solid ${BASE.border}`,display:"flex",justifyContent:"space-around",padding:"12px 0 18px"}}>
+      {[["today","Today","✦"],["library","Library","▦"],["trends","Trends","◷"],["about","About","❧"]].map(([k,label,icon])=>(
+        <button key={k} onClick={()=>setTab(k)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,color:tab===k?T.accent:BASE.taupe,fontSize:11,fontWeight:600}}>
+          <span style={{fontSize:18}}>{icon}</span>{label}
+        </button>
+      ))}
+    </nav>
+  </div>);
+}
+
+// ---------------- TODAY ----------------
+function Today({T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving,saveErr}){
+  const dateStr=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+  const cur=colorFromPct(pct);
+  return (<div style={{padding:"8px 18px 0"}}>
+    <p style={{textAlign:"center",color:BASE.creamDim,fontSize:14,margin:"4px 0 2px"}}>Good morning</p>
+    <p style={{textAlign:"center",color:BASE.taupe,fontSize:12}}>{dateStr}</p>
+    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:24,textAlign:"center",margin:"26px 0 4px"}}>How's your capacity today?</h2>
+    <div style={{textAlign:"center",margin:"10px 0 4px"}}>
+      <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:64,fontWeight:600,color:THEMES[cur].accent,transition:"color .4s"}}>{pct}</span>
+      <span style={{fontSize:22,color:BASE.taupe}}>%</span>
+    </div>
+    <input type="range" min="0" max="100" step="5" value={pct} onChange={e=>setPct(+e.target.value)} style={{width:"100%",margin:"8px 0 20px","--accent":THEMES[cur].accent,background:`linear-gradient(90deg, ${THEMES[cur].accent} ${pct}%, ${BASE.surface2} ${pct}%)`}}/>
+    <div style={{display:"flex",gap:10,marginBottom:22}}>
+      {["red","yellow","green"].map(k=>{const active=cur===k;return(
+        <div key={k} onClick={()=>setPct(k==="red"?25:k==="yellow"?55:85)} style={{flex:1,cursor:"pointer",textAlign:"center",padding:"16px 6px",borderRadius:16,background:active?THEMES[k].tint:BASE.surface,border:`1.5px solid ${active?THEMES[k].accent:BASE.border}`,transition:"all .35s"}}>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:19,fontWeight:600,color:THEMES[k].accent}}>{THEMES[k].label.split(" ")[0]}</div>
+          <div style={{fontSize:10,color:BASE.taupe,marginTop:2}}>{THEMES[k].range}</div>
+        </div>);})}
+    </div>
+    <Label>What's affecting you?</Label>
+    <Chips items={FACTORS} selected={factors} onToggle={v=>toggle(factors,setFactors,v)} accent={THEMES[cur].accent} glow={THEMES[cur].glow}/>
+    <div style={{height:20}}/>
+    <Label>What would support you most?</Label>
+    <Chips items={SUPPORTS} selected={supports} onToggle={v=>toggle(supports,setSupports,v)} accent={THEMES[cur].accent} glow={THEMES[cur].glow}/>
+    <div style={{height:20}}/>
+    <Label>Today's one thing</Label>
+    <input type="text" value={oneThing} onChange={e=>setOneThing(e.target.value)} placeholder="The single thing that would make today a success…" style={{width:"100%",padding:"13px 15px",borderRadius:12,background:BASE.surface,border:`1px solid ${BASE.border}`,color:BASE.cream,fontSize:14,outline:"none"}}/>
+    {saveErr && <div style={{marginTop:14,padding:"12px",borderRadius:12,background:"rgba(220,111,94,0.12)",border:"1px solid rgba(220,111,94,0.4)",color:"#DC6F5E",fontSize:13,textAlign:"center"}}>Couldn't save: {saveErr}</div>}
+    {!checkedIn
+      ? <button onClick={saveCheckin} disabled={saving} style={{width:"100%",marginTop:24,padding:"16px",borderRadius:14,border:"none",cursor:"pointer",background:THEMES[cur].accent,color:"#1a140f",fontSize:15,fontWeight:700,opacity:saving?.6:1}}>{saving?"Saving…":"Set my capacity for today"}</button>
+      : <><div className="fade-in" style={{marginTop:24,padding:"13px",borderRadius:12,background:THEMES[cur].tint,border:`1px solid rgba(${THEMES[cur].glow},0.4)`,textAlign:"center",color:THEMES[cur].accent,fontSize:14,fontWeight:700}}>Saved ✓&nbsp;&nbsp;Your capacity is set for today</div><Protocol key={cur} color={cur} T={THEMES[cur]} baseline={baseline} setBaseline={setBaseline}/></>}
+  </div>);
+}
+function Protocol({color,T,baseline,setBaseline}){
+  const RED=["Drink water","Eat something with protein","Basic hygiene","Take medications","Rest when possible"];
+  return (<div className="fade-in" style={{marginTop:26}}>
+    <div style={{textAlign:"center",padding:"0 6px 22px"}}>
+      <p style={{fontFamily:"'Sacramento',cursive",fontSize:30,lineHeight:1.35,color:T.accent}}>“{QUOTES[color]}”</p>
+      <p style={{fontSize:11,color:BASE.taupe,marginTop:8,letterSpacing:1}}>— VANESSA, RN</p>
+    </div>
+    <div style={{padding:"18px",borderRadius:16,background:T.tint,border:`1px solid rgba(${T.glow},0.3)`}}>
+      <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:T.accent,fontWeight:700}}>{T.label} · {T.word}</div>
+      {color==="red" && <>
+        <p style={{fontSize:14,color:BASE.creamDim,margin:"12px 0 14px",lineHeight:1.6}}>Your only goal today is to stay safe, stable, and minimally supported. Everything else can wait.</p>
+        <div style={{fontSize:11,color:BASE.taupe,marginBottom:8,fontWeight:600}}>BASELINE CARE</div>
+        {RED.map((item,i)=>(<div key={i} onClick={()=>setBaseline(baseline.map((b,j)=>j===i?!b:b))} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",cursor:"pointer",borderBottom:i<4?`0.5px solid ${BASE.border}`:"none"}}>
+          <span style={{width:22,height:22,borderRadius:"50%",border:`1.5px solid ${baseline[i]?T.accent:BASE.taupe}`,background:baseline[i]?T.accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#1a140f"}}>{baseline[i]?"✓":""}</span>
+          <span style={{fontSize:14,color:baseline[i]?BASE.taupe:BASE.cream,textDecoration:baseline[i]?"line-through":"none"}}>{item}</span>
+        </div>))}
+      </>}
+      {color==="yellow" && <>
+        <p style={{fontSize:14,color:BASE.creamDim,margin:"12px 0 14px",lineHeight:1.6}}>You can do things — you just can't do everything. Handle today while protecting tomorrow.</p>
+        {[["Essential","Must happen: work, childcare, meals"],["Important","Pick one or two: errands, movement, prep"],["Optional","Let it wait: deep cleaning, catching up"]].map(([h,d],i)=>(
+          <div key={i} style={{padding:"10px 0",borderBottom:i<2?`0.5px solid ${BASE.border}`:"none"}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.accent}}>{h}</div>
+            <div style={{fontSize:13,color:BASE.creamDim,marginTop:2}}>{d}</div>
+          </div>))}
+      </>}
+      {color==="green" && <>
+        <p style={{fontSize:14,color:BASE.creamDim,margin:"12px 0 14px",lineHeight:1.6}}>You're resourced. This is the time for the things Red and Yellow days can't hold.</p>
+        {["Plan and set goals","Deep or creative work","A bigger project or habit","Connection and growth"].map((item,i)=>(
+          <div key={i} style={{display:"flex",gap:10,padding:"8px 0",fontSize:14,color:BASE.cream}}><span style={{color:T.accent}}>›</span>{item}</div>))}
+      </>}
+    </div>
+  </div>);
+}
+
+// ---------------- LIBRARY ----------------
+function Library({T,content,hasCourse}){
+  const videos=content.filter(c=>c.kind==="video");
+  const kits=content.filter(c=>c.kind==="kit");
+  return (<div style={{padding:"8px 18px 0"}} className="fade-in">
+    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:26,margin:"12px 0 18px"}}>Your library</h2>
+    {videos.length>0 ? <>
+      <Label>This month</Label>
+      {videos.map(v=><Tile key={v.id} T={T} icon="▶" title={v.title} sub={v.subtitle||v.month}/>)}
+    </> : <div style={{padding:"18px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:14,color:BASE.taupe,fontSize:13,lineHeight:1.6}}>Your first monthly video will appear here once you add it. (Add it in your Supabase content table, kind = video.)</div>}
+    {kits.map(k=><Tile key={k.id} T={T} icon="⬇" title={k.title} sub={k.subtitle||"Monthly kit · PDF"}/>)}
+    <Label>Included guides</Label>
+    <Tile T={T} icon="❶" title="The Capacity Assessment" sub="Part 1"/>
+    <Tile T={T} icon="❷" title="Red Day Protocol" sub="Part 2"/>
+    <Tile T={T} icon="❸" title="Capacity Rebuild Plan" sub="Part 3"/>
+    <Tile T={T} icon="❹" title="Yellow Day Protocol" sub="Part 4"/>
+    <Label>Go deeper</Label>
+    <div style={{borderRadius:16,padding:"18px",background:T.tint,border:`1px solid rgba(${T.glow},0.3)`}}>
+      <div style={{fontSize:11,letterSpacing:2,color:T.accent,fontWeight:700}}>4-WEEK COURSE</div>
+      <div style={{fontSize:17,fontWeight:700,margin:"6px 0 4px"}}>The Capacity Reset</div>
+      <div style={{fontSize:13,color:BASE.creamDim,lineHeight:1.5,marginBottom:14}}>Assess → Stabilize → Rebuild → Sustain. Video-led, self-paced.</div>
+      <button style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:hasCourse?BASE.surface2:T.accent,color:hasCourse?BASE.cream:"#1a140f",fontWeight:700,fontSize:14,cursor:"pointer"}}>{hasCourse?"Open the course":"Unlock the course"}</button>
+    </div>
+  </div>);
+}
+
+// ---------------- TRENDS ----------------
+function Trends({T,history}){
+  const stats=useMemo(()=>{
+    if(!history.length) return null;
+    const counts={red:0,yellow:0,green:0}; let sum=0;
+    history.forEach(d=>{counts[d.color]++;sum+=d.pct;});
+    return {counts,avg:Math.round(sum/history.length),top:Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0]};
+  },[history]);
+  return (<div style={{padding:"8px 18px 0"}} className="fade-in">
+    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:26,margin:"12px 0 6px"}}>Your capacity over time</h2>
+    <p style={{fontSize:13,color:BASE.taupe,marginBottom:22}}>Patterns, not pressure.</p>
+    {!stats ? <div style={{padding:"24px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`,color:BASE.taupe,fontSize:14,lineHeight:1.6,textAlign:"center"}}>Once you start checking in each day, your capacity history will grow here — and patterns will start to show.</div>
+    : <>
+      <div style={{display:"flex",alignItems:"flex-end",gap:3,height:140,paddingBottom:8,borderBottom:`0.5px solid ${BASE.border}`}}>
+        {history.map((d,i)=><div key={i} title={d.pct+"%"} style={{flex:1,height:`${d.pct}%`,borderRadius:3,background:THEMES[d.color].accent,opacity:.85}}/>)}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"22px 0"}}>
+        <Stat label="Average capacity" value={stats.avg+"%"} accent={T.accent}/>
+        <Stat label="Most common day" value={THEMES[stats.top].label.split(" ")[0]} accent={THEMES[stats.top].accent}/>
+        <Stat label="Green Days" value={stats.counts.green} accent={THEMES.green.accent}/>
+        <Stat label="Red Days" value={stats.counts.red} accent={THEMES.red.accent}/>
+      </div>
+    </>}
+  </div>);
+}
+
+// ---------------- ABOUT ----------------
+function About({T,onLogout}){
+  return (<div style={{padding:"8px 18px 0"}} className="fade-in">
+    <div style={{textAlign:"center",margin:"10px 0 28px"}}>
+      <div style={{width:92,height:92,borderRadius:"50%",margin:"0 auto 14px",background:`linear-gradient(135deg, ${T.accent}, ${BASE.terracottaDeep})`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Pinyon Script',cursive",fontSize:40,color:"#1a140f"}}>V</div>
+      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:24,fontWeight:600}}>Vanessa Parkin, RN</div>
+      <div style={{fontSize:12,color:BASE.taupe,letterSpacing:1}}>NURSE · MOTHER · FOUNDER</div>
+    </div>
+    <p style={{fontFamily:"'Sacramento',cursive",fontSize:34,textAlign:"center",color:T.accent,lineHeight:1.3,marginBottom:26}}>“Capacity is not character.”</p>
+    <Card><CardTitle>Why I built this</CardTitle><p style={{fontSize:14,color:BASE.creamDim,lineHeight:1.7}}>For years I expected the same output from myself regardless of what I was carrying. As a nurse, wife, and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short. The Capacity Method began as a way to stop fighting reality and start working with it.</p></Card>
+    <Card><CardTitle>What the method is</CardTitle><p style={{fontSize:14,color:BASE.creamDim,lineHeight:1.7,marginBottom:14}}>A simple system for matching your expectations to the energy you actually have today.</p>
+      {[["red","Red Day","0–35% · survive and stabilize"],["yellow","Yellow Day","36–70% · steady progress"],["green","Green Day","71–100% · plan, grow, build"]].map(([k,t,d])=>(
+        <div key={k} style={{display:"flex",gap:12,alignItems:"center",padding:"9px 0"}}><span style={{width:12,height:12,borderRadius:"50%",background:THEMES[k].accent,flexShrink:0}}/><div><span style={{fontWeight:700,fontSize:14}}>{t}</span> <span style={{fontSize:13,color:BASE.taupe}}>— {d}</span></div></div>))}
+    </Card>
+    <button onClick={onLogout} style={{width:"100%",marginTop:8,padding:"13px",borderRadius:12,border:`1px solid ${BASE.border}`,background:"transparent",color:BASE.taupe,fontSize:14,cursor:"pointer"}}>Log out</button>
+  </div>);
+}
+
+// ---------------- shared ----------------
+function Label({children}){return <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:BASE.taupe,fontWeight:700,margin:"0 0 12px"}}>{children}</div>;}
+function Chips({items,selected,onToggle,accent,glow}){
+  return (<div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+    {items.map(it=>{const on=selected.includes(it);return(
+      <span key={it} onClick={()=>onToggle(it)} style={{cursor:"pointer",fontSize:13,padding:"8px 14px",borderRadius:99,background:on?`rgba(${glow},0.16)`:BASE.surface,border:`1px solid ${on?accent:BASE.border}`,color:on?accent:BASE.creamDim,transition:"all .25s"}}>{it}</span>);})}
+  </div>);
+}
+function Tile({T,icon,title,sub}){
+  return (<div style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:10,cursor:"pointer"}}>
+    <span style={{width:38,height:38,borderRadius:10,background:BASE.surface2,display:"flex",alignItems:"center",justifyContent:"center",color:T.accent,fontSize:15,flexShrink:0}}>{icon}</span>
+    <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><div style={{fontSize:12,color:BASE.taupe,marginTop:1}}>{sub}</div></div>
+    <span style={{color:BASE.taupe}}>›</span>
+  </div>);
+}
+function Stat({label,value,accent}){
+  return (<div style={{padding:"16px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`}}>
+    <div style={{fontSize:12,color:BASE.taupe}}>{label}</div>
+    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:600,color:accent,marginTop:2}}>{value}</div>
+  </div>);
+}
+function Card({children}){return <div style={{padding:"18px",borderRadius:16,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:14}}>{children}</div>;}
+function CardTitle({children}){return <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:19,fontWeight:600,marginBottom:8}}>{children}</div>;}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
+</script>
+</body>
+</html>
