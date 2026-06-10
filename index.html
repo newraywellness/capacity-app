@@ -4,18 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>The Capacity Method · New Ray Wellness</title>
-
-<!-- fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Sacramento&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- React + Babel + Supabase (loaded from CDN, no build step needed) -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
   html, body { background: #181410; }
@@ -24,6 +19,7 @@
   input[type=range]{ -webkit-appearance:none; appearance:none; height:6px; border-radius:999px; outline:none; }
   input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#F2EADD; cursor:pointer; border:3px solid var(--accent,#D08560); }
   input[type=range]::-moz-range-thumb{ width:26px; height:26px; border-radius:50%; background:#F2EADD; cursor:pointer; border:3px solid var(--accent,#D08560); }
+  a { text-decoration: none; }
   @keyframes breathe { 0%,100%{ opacity:.55 } 50%{ opacity:.9 } }
   .glow-breathe{ animation: breathe 6s ease-in-out infinite; }
   .fade-in{ animation: fadeIn .5s ease both; }
@@ -32,18 +28,40 @@
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useMemo, useEffect } = React;
 
 // ============================================================
-//  YOUR KEYS  — if you ever regenerate them, change them here
+//  YOUR KEYS
 // ============================================================
 const SUPABASE_URL = "https://gidezdugmwtemohkkeyr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bmt_uXzHvBlMTBpvkkRJPA_VpsEfPnp";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------------- design tokens ----------------
+// ============================================================
+//  EASY EDITS — change these without touching anything else
+// ============================================================
+// Paste your Shopify checkout link for the Library here:
+const PURCHASE_URL = "#";  // e.g. "https://yourstore.com/products/capacity-method-library"
+
+// Your Library files. Paste a link into `url` and that item opens.
+// Leave url as "" and it politely shows "Adding soon".
+const LIBRARY = {
+  framework: [
+    { title: "Part 1 · The Capacity Assessment", sub: "Find your daily capacity", url: "" },
+    { title: "Part 2 · Red Day Protocol", sub: "What to do on low-capacity days", url: "" },
+    { title: "Part 3 · Capacity Rebuild Plan", sub: "Restoring energy without pressure", url: "" },
+    { title: "Part 4 · Yellow Day Protocol", sub: "Steady, sustainable days", url: "" },
+  ],
+  program: { title: "The 28-Day Capacity Reset", sub: "A daily system to rebuild energy, boundaries & self-trust", url: "" },
+  support: [
+    { title: "Video teachings", sub: "Vanessa's lessons & examples", url: "" },
+    { title: "Tools & worksheets", sub: "Printable capacity tools", url: "" },
+    { title: "Monthly updates", sub: "New content added regularly", url: "" },
+  ],
+};
+// ============================================================
+
 const BASE = { bg:"#181410", bg2:"#211B15", surface:"#2A2219", surface2:"#352B20",
   border:"rgba(217,199,172,0.12)", cream:"#F2EADD", creamDim:"#D9C7AC", taupe:"#A8987F",
   terracotta:"#D08560", terracottaDeep:"#B56A47" };
@@ -62,10 +80,10 @@ const QUOTES={red:"Capacity is not character. A Red Day means your system needs 
   none:"Stop expecting Green Day performance on Red Day energy."};
 
 // ============================================================
-//  ROOT — decides: loading / login / membership-gate / app
+//  ROOT — free for everyone who signs up; Library is the paywall
 // ============================================================
 function Root(){
-  const [session,setSession]=useState(undefined); // undefined=loading
+  const [session,setSession]=useState(undefined);
   const [profile,setProfile]=useState(null);
   const [loadingProfile,setLoadingProfile]=useState(false);
 
@@ -74,7 +92,6 @@ function Root(){
     const {data:sub}=db.auth.onAuthStateChange((_e,s)=>setSession(s));
     return ()=>sub.subscription.unsubscribe();
   },[]);
-
   useEffect(()=>{
     if(!session){ setProfile(null); return; }
     setLoadingProfile(true);
@@ -82,15 +99,12 @@ function Root(){
       .then(({data})=>{ setProfile(data); setLoadingProfile(false); });
   },[session]);
 
-  const wrap=(child)=>(<div style={{fontFamily:"'Nunito Sans',sans-serif",background:BASE.bg,color:BASE.cream,minHeight:"100vh",maxWidth:440,margin:"0 auto"}}>{child}</div>);
-
+  const wrap=(c)=>(<div style={{fontFamily:"'Nunito Sans',sans-serif",background:BASE.bg,color:BASE.cream,minHeight:"100vh",maxWidth:440,margin:"0 auto"}}>{c}</div>);
   if(session===undefined) return wrap(<Splash text="Loading…"/>);
   if(!session) return wrap(<Auth/>);
   if(loadingProfile||!profile) return wrap(<Splash text="Getting things ready…"/>);
-  if(!profile.has_membership && !profile.is_owner) return wrap(<MembershipNeeded email={profile.email}/>);
   return <AppShell session={session} profile={profile}/>;
 }
-
 function Splash({text}){
   return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}>
     <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:46,color:BASE.cream}}>New Ray</div>
@@ -99,14 +113,13 @@ function Splash({text}){
 }
 
 // ============================================================
-//  AUTH — sign up / log in
+//  AUTH — free account = the email-for-check-in exchange
 // ============================================================
 function Auth(){
-  const [mode,setMode]=useState("login");
+  const [mode,setMode]=useState("signup");
   const [email,setEmail]=useState(""); const [pw,setPw]=useState("");
   const [name,setName]=useState(""); const [msg,setMsg]=useState(""); const [busy,setBusy]=useState(false);
   const A=BASE.terracotta;
-
   async function go(){
     setBusy(true); setMsg("");
     if(mode==="signup"){
@@ -119,26 +132,22 @@ function Auth(){
     }
     setBusy(false);
   }
-
   return (<div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 28px"}}>
-    <div style={{textAlign:"center",marginBottom:36}}>
+    <div style={{textAlign:"center",marginBottom:14}}>
       <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:52,color:BASE.cream}}>New Ray</div>
       <div style={{fontSize:11,letterSpacing:4,textTransform:"uppercase",color:BASE.taupe,marginTop:6}}>The Capacity Method</div>
     </div>
-    <p style={{fontFamily:"'Sacramento',cursive",fontSize:26,textAlign:"center",color:A,marginBottom:28}}>“Capacity is not character.”</p>
-
+    <p style={{fontFamily:"'Sacramento',cursive",fontSize:26,textAlign:"center",color:A,marginBottom:8}}>“Capacity is not character.”</p>
+    <p style={{textAlign:"center",color:BASE.creamDim,fontSize:13,lineHeight:1.5,marginBottom:26}}>Free daily capacity check-in. Create your account to begin — no payment needed.</p>
     {mode==="signup" && <Field label="Your name" value={name} onChange={setName} placeholder="First name"/>}
     <Field label="Email" value={email} onChange={setEmail} placeholder="you@email.com" type="email"/>
     <Field label="Password" value={pw} onChange={setPw} placeholder="••••••••" type="password"/>
-
     {msg && <div style={{color:"#DC6F5E",fontSize:13,marginBottom:14,textAlign:"center"}}>{msg}</div>}
-
     <button onClick={go} disabled={busy} style={{padding:"15px",borderRadius:14,border:"none",cursor:"pointer",background:A,color:"#1a140f",fontSize:15,fontWeight:700,opacity:busy?.6:1}}>
-      {busy?"…":(mode==="signup"?"Create my account":"Log in")}
+      {busy?"…":(mode==="signup"?"Create my free account":"Log in")}
     </button>
-
     <div onClick={()=>{setMode(mode==="signup"?"login":"signup");setMsg("");}} style={{textAlign:"center",marginTop:20,color:BASE.taupe,fontSize:13,cursor:"pointer"}}>
-      {mode==="signup"?"Already have an account? Log in":"New here? Create an account"}
+      {mode==="signup"?"Already have an account? Log in":"New here? Create a free account"}
     </div>
   </div>);
 }
@@ -151,24 +160,7 @@ function Field({label,value,onChange,placeholder,type="text"}){
 }
 
 // ============================================================
-//  MEMBERSHIP GATE
-// ============================================================
-function MembershipNeeded({email}){
-  return (<div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 30px",textAlign:"center"}}>
-    <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:46,color:BASE.cream,marginBottom:8}}>New Ray</div>
-    <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,marginBottom:14}}>Your membership isn't active yet</p>
-    <p style={{color:BASE.creamDim,fontSize:14,lineHeight:1.6,marginBottom:24}}>
-      You're logged in as {email}. Once your membership is active, this is where your daily check-in and library will open.
-    </p>
-    <p style={{color:BASE.taupe,fontSize:12,lineHeight:1.6,marginBottom:24}}>
-      (Setup note for you, Vanessa: this is where Shopify will connect. To test the app right now, open your Supabase profiles table, find your row, and set has_membership to true — then refresh.)
-    </p>
-    <button onClick={()=>db.auth.signOut()} style={{padding:"13px",borderRadius:12,border:`1px solid ${BASE.border}`,background:"transparent",color:BASE.creamDim,fontSize:14,cursor:"pointer"}}>Log out</button>
-  </div>);
-}
-
-// ============================================================
-//  APP SHELL — tabs, theming, data loading
+//  APP SHELL — tab order: Today · Trends · Library · About
 // ============================================================
 function AppShell({session,profile}){
   const [tab,setTab]=useState("today");
@@ -181,7 +173,7 @@ function AppShell({session,profile}){
   const [history,setHistory]=useState([]);
   const [content,setContent]=useState([]);
   const [saving,setSaving]=useState(false);
-
+  const [saveErr,setSaveErr]=useState("");
   const uid=session.user.id;
 
   async function loadHistory(){
@@ -201,11 +193,13 @@ function AppShell({session,profile}){
   const toggle=(arr,set,v)=>set(arr.includes(v)?arr.filter(x=>x!==v):[...arr,v]);
 
   async function saveCheckin(){
-    setSaving(true);
+    setSaving(true); setSaveErr("");
     const color=colorFromPct(pct);
     const today=new Date().toISOString().slice(0,10);
-    await db.from("checkins").upsert({user_id:uid,date:today,pct,color,factors,supports,one_thing:oneThing},{onConflict:"user_id,date"});
-    setSaving(false); setCheckedIn(true); loadHistory();
+    const {error}=await db.from("checkins").upsert({user_id:uid,date:today,pct,color,factors,supports,one_thing:oneThing},{onConflict:"user_id,date"});
+    setSaving(false);
+    if(error){ setSaveErr(error.message); return; }
+    setCheckedIn(true); loadHistory();
   }
 
   return (<div style={{"--accent":T.accent,fontFamily:"'Nunito Sans',sans-serif",background:BASE.bg,color:BASE.cream,minHeight:"100vh",maxWidth:440,margin:"0 auto",position:"relative",overflow:"hidden"}}>
@@ -215,15 +209,13 @@ function AppShell({session,profile}){
         <div style={{fontFamily:"'Pinyon Script',cursive",fontSize:40,lineHeight:1,color:BASE.cream}}>New Ray</div>
         <div style={{fontSize:11,letterSpacing:4,textTransform:"uppercase",color:BASE.taupe,marginTop:6}}>The Capacity Method</div>
       </header>
-
-      {tab==="today" && <Today {...{T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving}}/>}
-      {tab==="library" && <Library T={T} content={content} hasCourse={profile.has_course}/>}
+      {tab==="today" && <Today {...{T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving,saveErr}}/>}
       {tab==="trends" && <Trends T={T} history={history}/>}
+      {tab==="library" && <Library T={T} profile={profile} content={content}/>}
       {tab==="about" && <About T={T} onLogout={()=>db.auth.signOut()}/>}
     </div>
-
     <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"rgba(24,20,16,0.92)",backdropFilter:"blur(12px)",borderTop:`0.5px solid ${BASE.border}`,display:"flex",justifyContent:"space-around",padding:"12px 0 18px"}}>
-      {[["today","Today","✦"],["library","Library","▦"],["trends","Trends","◷"],["about","About","❧"]].map(([k,label,icon])=>(
+      {[["today","Today","✦"],["trends","Trends","◷"],["library","Library","▦"],["about","About","❧"]].map(([k,label,icon])=>(
         <button key={k} onClick={()=>setTab(k)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,color:tab===k?T.accent:BASE.taupe,fontSize:11,fontWeight:600}}>
           <span style={{fontSize:18}}>{icon}</span>{label}
         </button>
@@ -232,8 +224,8 @@ function AppShell({session,profile}){
   </div>);
 }
 
-// ---------------- TODAY ----------------
-function Today({T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving}){
+// ---------------- TODAY (free) ----------------
+function Today({T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving,saveErr}){
   const dateStr=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
   const cur=colorFromPct(pct);
   return (<div style={{padding:"8px 18px 0"}}>
@@ -260,9 +252,10 @@ function Today({T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,tog
     <div style={{height:20}}/>
     <Label>Today's one thing</Label>
     <input type="text" value={oneThing} onChange={e=>setOneThing(e.target.value)} placeholder="The single thing that would make today a success…" style={{width:"100%",padding:"13px 15px",borderRadius:12,background:BASE.surface,border:`1px solid ${BASE.border}`,color:BASE.cream,fontSize:14,outline:"none"}}/>
+    {saveErr && <div style={{marginTop:14,padding:"12px",borderRadius:12,background:"rgba(220,111,94,0.12)",border:"1px solid rgba(220,111,94,0.4)",color:"#DC6F5E",fontSize:13,textAlign:"center"}}>Couldn't save: {saveErr}</div>}
     {!checkedIn
       ? <button onClick={saveCheckin} disabled={saving} style={{width:"100%",marginTop:24,padding:"16px",borderRadius:14,border:"none",cursor:"pointer",background:THEMES[cur].accent,color:"#1a140f",fontSize:15,fontWeight:700,opacity:saving?.6:1}}>{saving?"Saving…":"Set my capacity for today"}</button>
-      : <Protocol key={cur} color={cur} T={THEMES[cur]} baseline={baseline} setBaseline={setBaseline}/>}
+      : <><div className="fade-in" style={{marginTop:24,padding:"13px",borderRadius:12,background:THEMES[cur].tint,border:`1px solid rgba(${THEMES[cur].glow},0.4)`,textAlign:"center",color:THEMES[cur].accent,fontSize:14,fontWeight:700}}>Saved ✓&nbsp;&nbsp;Your capacity is set for today</div><Protocol key={cur} color={cur} T={THEMES[cur]} baseline={baseline} setBaseline={setBaseline}/></>}
   </div>);
 }
 function Protocol({color,T,baseline,setBaseline}){
@@ -299,33 +292,7 @@ function Protocol({color,T,baseline,setBaseline}){
   </div>);
 }
 
-// ---------------- LIBRARY ----------------
-function Library({T,content,hasCourse}){
-  const videos=content.filter(c=>c.kind==="video");
-  const kits=content.filter(c=>c.kind==="kit");
-  return (<div style={{padding:"8px 18px 0"}} className="fade-in">
-    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:26,margin:"12px 0 18px"}}>Your library</h2>
-    {videos.length>0 ? <>
-      <Label>This month</Label>
-      {videos.map(v=><Tile key={v.id} T={T} icon="▶" title={v.title} sub={v.subtitle||v.month}/>)}
-    </> : <div style={{padding:"18px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:14,color:BASE.taupe,fontSize:13,lineHeight:1.6}}>Your first monthly video will appear here once you add it. (Add it in your Supabase content table, kind = video.)</div>}
-    {kits.map(k=><Tile key={k.id} T={T} icon="⬇" title={k.title} sub={k.subtitle||"Monthly kit · PDF"}/>)}
-    <Label>Included guides</Label>
-    <Tile T={T} icon="❶" title="The Capacity Assessment" sub="Part 1"/>
-    <Tile T={T} icon="❷" title="Red Day Protocol" sub="Part 2"/>
-    <Tile T={T} icon="❸" title="Capacity Rebuild Plan" sub="Part 3"/>
-    <Tile T={T} icon="❹" title="Yellow Day Protocol" sub="Part 4"/>
-    <Label>Go deeper</Label>
-    <div style={{borderRadius:16,padding:"18px",background:T.tint,border:`1px solid rgba(${T.glow},0.3)`}}>
-      <div style={{fontSize:11,letterSpacing:2,color:T.accent,fontWeight:700}}>4-WEEK COURSE</div>
-      <div style={{fontSize:17,fontWeight:700,margin:"6px 0 4px"}}>The Capacity Reset</div>
-      <div style={{fontSize:13,color:BASE.creamDim,lineHeight:1.5,marginBottom:14}}>Assess → Stabilize → Rebuild → Sustain. Video-led, self-paced.</div>
-      <button style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:hasCourse?BASE.surface2:T.accent,color:hasCourse?BASE.cream:"#1a140f",fontWeight:700,fontSize:14,cursor:"pointer"}}>{hasCourse?"Open the course":"Unlock the course"}</button>
-    </div>
-  </div>);
-}
-
-// ---------------- TRENDS ----------------
+// ---------------- TRENDS (free) ----------------
 function Trends({T,history}){
   const stats=useMemo(()=>{
     if(!history.length) return null;
@@ -351,7 +318,59 @@ function Trends({T,history}){
   </div>);
 }
 
-// ---------------- ABOUT ----------------
+// ---------------- LIBRARY (paid — one-time purchase) ----------------
+function Library({T,profile,content}){
+  const unlocked = profile.has_membership || profile.is_owner;
+  if(!unlocked) return <Paywall T={T}/>;
+
+  const videos = content.filter(c=>c.kind==="video");
+  return (<div style={{padding:"8px 18px 0"}} className="fade-in">
+    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:26,margin:"12px 0 4px"}}>The Capacity Method Library</h2>
+    <p style={{fontSize:13,color:BASE.creamDim,lineHeight:1.5,marginBottom:24}}>Your complete self-regulation system. Everything in one place.</p>
+
+    <SectionHead n="1" title="Core Framework" sub="The Capacity Method — four guides"/>
+    {LIBRARY.framework.map((g,i)=><LibTile key={i} T={T} icon={["❶","❷","❸","❹"][i]} title={g.title} sub={g.sub} url={g.url}/>)}
+
+    <SectionHead n="2" title="Implementation Program" sub="Put the framework into practice"/>
+    <LibTile T={T} icon="↻" title={LIBRARY.program.title} sub={LIBRARY.program.sub} url={LIBRARY.program.url}/>
+
+    <SectionHead n="3" title="Support Library" sub="Teaching, tools & ongoing updates"/>
+    {LIBRARY.support.map((s,i)=><LibTile key={i} T={T} icon={["▶","✎","✦"][i]} title={s.title} sub={s.sub} url={s.url}/>)}
+    {videos.map(v=><LibTile key={v.id} T={T} icon="▶" title={v.title} sub={v.subtitle||v.month} url={v.url}/>)}
+  </div>);
+}
+function Paywall({T}){
+  return (<div style={{padding:"18px 18px 0"}} className="fade-in">
+    <div style={{textAlign:"center",margin:"20px 0 8px",fontSize:34,color:T.accent}}>▦</div>
+    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:26,textAlign:"center",margin:"0 0 8px"}}>The Capacity Method Library</h2>
+    <p style={{fontSize:14,color:BASE.creamDim,textAlign:"center",lineHeight:1.6,marginBottom:22}}>A complete self-regulation system for overwhelmed women. One purchase, yours for good.</p>
+    <div style={{padding:"20px",borderRadius:16,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:22}}>
+      {[["Core Framework","The 4 Capacity Method guides"],["28-Day Capacity Reset","A simple daily rebuild program"],["Video teachings & tools","Lessons, worksheets & resources"],["Monthly updates","New content added regularly"]].map(([t,d],i)=>(
+        <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"10px 0",borderBottom:i<3?`0.5px solid ${BASE.border}`:"none"}}>
+          <span style={{color:T.accent,fontSize:15,marginTop:1}}>✓</span>
+          <div><div style={{fontSize:14,fontWeight:700}}>{t}</div><div style={{fontSize:13,color:BASE.taupe,marginTop:1}}>{d}</div></div>
+        </div>))}
+    </div>
+    <a href={PURCHASE_URL} target="_blank" rel="noopener" style={{display:"block",textAlign:"center",padding:"16px",borderRadius:14,background:T.accent,color:"#1a140f",fontSize:15,fontWeight:700}}>Unlock the Library</a>
+    <div onClick={()=>window.location.reload()} style={{textAlign:"center",marginTop:18,color:BASE.taupe,fontSize:13,cursor:"pointer"}}>Already purchased? Tap to refresh</div>
+  </div>);
+}
+function SectionHead({n,title,sub}){
+  return (<div style={{margin:"24px 0 12px"}}>
+    <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:BASE.taupe,fontWeight:700}}>{n} · {title}</div>
+    <div style={{fontSize:13,color:BASE.creamDim,marginTop:3}}>{sub}</div>
+  </div>);
+}
+function LibTile({T,icon,title,sub,url}){
+  const inner=(<div style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:10,cursor:url?"pointer":"default",opacity:url?1:0.6}}>
+    <span style={{width:38,height:38,borderRadius:10,background:BASE.surface2,display:"flex",alignItems:"center",justifyContent:"center",color:T.accent,fontSize:15,flexShrink:0}}>{icon}</span>
+    <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><div style={{fontSize:12,color:BASE.taupe,marginTop:1}}>{url?sub:"Adding soon"}</div></div>
+    <span style={{color:BASE.taupe}}>{url?"›":""}</span>
+  </div>);
+  return url ? <a href={url} target="_blank" rel="noopener">{inner}</a> : inner;
+}
+
+// ---------------- ABOUT (free) ----------------
 function About({T,onLogout}){
   return (<div style={{padding:"8px 18px 0"}} className="fade-in">
     <div style={{textAlign:"center",margin:"10px 0 28px"}}>
@@ -375,13 +394,6 @@ function Chips({items,selected,onToggle,accent,glow}){
   return (<div style={{display:"flex",flexWrap:"wrap",gap:8}}>
     {items.map(it=>{const on=selected.includes(it);return(
       <span key={it} onClick={()=>onToggle(it)} style={{cursor:"pointer",fontSize:13,padding:"8px 14px",borderRadius:99,background:on?`rgba(${glow},0.16)`:BASE.surface,border:`1px solid ${on?accent:BASE.border}`,color:on?accent:BASE.creamDim,transition:"all .25s"}}>{it}</span>);})}
-  </div>);
-}
-function Tile({T,icon,title,sub}){
-  return (<div style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:14,background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:10,cursor:"pointer"}}>
-    <span style={{width:38,height:38,borderRadius:10,background:BASE.surface2,display:"flex",alignItems:"center",justifyContent:"center",color:T.accent,fontSize:15,flexShrink:0}}>{icon}</span>
-    <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><div style={{fontSize:12,color:BASE.taupe,marginTop:1}}>{sub}</div></div>
-    <span style={{color:BASE.taupe}}>›</span>
   </div>);
 }
 function Stat({label,value,accent}){
