@@ -42,7 +42,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //  EASY EDITS — change these without touching anything else
 // ============================================================
 // Paste your Shopify checkout link for the Library here:
-const PURCHASE_URL = "#";  // e.g. "https://yourstore.com/products/capacity-method-library"
+const PURCHASE_URL = "https://new-ray-wellness.myshopify.com/products/the-capacity-method-library";  // Shopify Library checkout
 
 // Your Library files. Paste a link into `url` and that item opens.
 // Leave url as "" and it politely shows "Adding soon".
@@ -58,6 +58,17 @@ const LIBRARY = {
     { title: "Video teachings", sub: "Vanessa's lessons & examples", url: "" },
     { title: "Tools & worksheets", sub: "Printable capacity tools", url: "" },
     { title: "Monthly updates", sub: "New content added regularly", url: "" },
+  ],
+};
+
+// Your hoodies. Paste each product's Shopify link into `buy` to make it shoppable.
+// Add a photo link in `img` to show a product picture (leave "" for a text mockup).
+const SHOP = {
+  currency: "$",
+  products: [
+    { name: "Respectfully, No", price: "54", blurb: "For the art of the boundary.", img: "", buy: "" },
+    { name: "Out of Office: Nervous System Maintenance", price: "58", blurb: "A Red Day, worn proudly.", img: "", buy: "" },
+    { name: "Capacity is not Character", price: "54", blurb: "The reminder, on your sleeve.", img: "", buy: "" },
   ],
 };
 // ============================================================
@@ -76,7 +87,7 @@ const FACTORS=["Poor sleep","Interrupted sleep","Stress","Work demands","Parenti
 const SUPPORTS=["Rest","Food","Water","Quiet","Connection","Movement","Time outside","Saying no","Slowing down"];
 const QUOTES={red:"Capacity is not character. A Red Day means your system needs support, not pressure.",
   yellow:"Most of life is not lived on Green Days. The goal is to do enough — not everything.",
-  green:"Use the energy you have wisely. Build on the good days without spending tomorrows energy.",
+  green:"Use the energy you have wisely. Build on the good days without spending tomorrow.",
   none:"Stop expecting Green Day performance on Red Day energy."};
 
 // ============================================================
@@ -212,10 +223,11 @@ function AppShell({session,profile}){
       {tab==="today" && <Today {...{T,pct,setPct,checkedIn,factors,supports,oneThing,setOneThing,toggle,setFactors,setSupports,baseline,setBaseline,saveCheckin,saving,saveErr}}/>}
       {tab==="trends" && <Trends T={T} history={history}/>}
       {tab==="library" && <Library T={T} profile={profile} content={content}/>}
+      {tab==="shop" && <Shop T={T}/>}
       {tab==="about" && <About T={T} onLogout={()=>db.auth.signOut()}/>}
     </div>
     <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:"rgba(24,20,16,0.92)",backdropFilter:"blur(12px)",borderTop:`0.5px solid ${BASE.border}`,display:"flex",justifyContent:"space-around",padding:"12px 0 18px"}}>
-      {[["today","Today","✦"],["trends","Trends","◷"],["library","Library","▦"],["about","About","❧"]].map(([k,label,icon])=>(
+      {[["today","Today","✦"],["trends","Trends","◷"],["library","Library","▦"],["shop","Shop","⬡"],["about","About","❧"]].map(([k,label,icon])=>(
         <button key={k} onClick={()=>setTab(k)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,color:tab===k?T.accent:BASE.taupe,fontSize:11,fontWeight:600}}>
           <span style={{fontSize:18}}>{icon}</span>{label}
         </button>
@@ -368,6 +380,34 @@ function LibTile({T,icon,title,sub,url}){
     <span style={{color:BASE.taupe}}>{url?"›":""}</span>
   </div>);
   return url ? <a href={url} target="_blank" rel="noopener">{inner}</a> : inner;
+}
+
+// ---------------- SHOP (open to everyone in the app) ----------------
+function Shop({T}){
+  const cur = SHOP.currency || "$";
+  return (<div style={{padding:"8px 18px 0"}} className="fade-in">
+    <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:26,margin:"12px 0 4px"}}>The Capacity Method Shop</h2>
+    <p style={{fontSize:13,color:BASE.creamDim,lineHeight:1.5,marginBottom:22}}>Wear the reminder. Soft, oversized, made for low-capacity days.</p>
+    {SHOP.products.map((p,i)=><ProductCard key={i} T={T} p={p} cur={cur}/>)}
+    <p style={{fontSize:11,color:BASE.taupe,textAlign:"center",margin:"6px 0 4px"}}>Secure checkout · ships from New Ray Wellness</p>
+  </div>);
+}
+function ProductCard({T,p,cur}){
+  return (<div style={{borderRadius:16,overflow:"hidden",background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:16}}>
+    <div style={{height:200,background:p.img?`center/cover no-repeat url(${p.img})`:`linear-gradient(135deg, ${BASE.surface2}, ${BASE.bg2})`,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
+      {!p.img && <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:BASE.creamDim,textAlign:"center",lineHeight:1.35}}>“{p.name}”</span>}
+    </div>
+    <div style={{padding:"16px 18px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}>
+        <div style={{fontSize:15,fontWeight:700,lineHeight:1.3}}>{p.name}</div>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:T.accent,whiteSpace:"nowrap"}}>{cur}{p.price}</div>
+      </div>
+      <div style={{fontSize:13,color:BASE.taupe,margin:"5px 0 14px"}}>{p.blurb}</div>
+      {p.buy
+        ? <a href={p.buy} target="_blank" rel="noopener" style={{display:"block",textAlign:"center",padding:"13px",borderRadius:12,background:T.accent,color:"#1a140f",fontSize:14,fontWeight:700}}>Add to cart</a>
+        : <div style={{textAlign:"center",padding:"13px",borderRadius:12,background:BASE.surface2,color:BASE.taupe,fontSize:14,fontWeight:600}}>Coming soon</div>}
+    </div>
+  </div>);
 }
 
 // ---------------- ABOUT (free) ----------------
