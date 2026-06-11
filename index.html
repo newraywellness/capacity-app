@@ -87,7 +87,7 @@ const FACTORS=["Poor sleep","Interrupted sleep","Stress","Work demands","Parenti
 const SUPPORTS=["Rest","Food","Water","Quiet","Connection","Movement","Time outside","Saying no","Slowing down"];
 const QUOTES={red:"Capacity is not character. A Red Day means your system needs support, not pressure.",
   yellow:"Most of life is not lived on Green Days. The goal is to do enough — not everything.",
-  green:"Use the energy you have wisely. Build on the good days without spending tomorrow.",
+  green:"Use the energy you have wisely. Build on the good days without spending tomorrow's energy.",
   none:"Stop expecting Green Day performance on Red Day energy."};
 
 // ============================================================
@@ -324,6 +324,7 @@ function Trends({T,history}){
         <Stat label="Average capacity" value={stats.avg+"%"} accent={T.accent}/>
         <Stat label="Most common day" value={THEMES[stats.top].label.split(" ")[0]} accent={THEMES[stats.top].accent}/>
         <Stat label="Green Days" value={stats.counts.green} accent={THEMES.green.accent}/>
+        <Stat label="Yellow Days" value={stats.counts.yellow} accent={THEMES.yellow.accent}/>
         <Stat label="Red Days" value={stats.counts.red} accent={THEMES.red.accent}/>
       </div>
     </>}
