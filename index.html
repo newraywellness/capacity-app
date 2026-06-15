@@ -52,6 +52,7 @@ const LIBRARY = {
     { title: "Part 2 · Red Day Protocol", sub: "What to do on low-capacity days", url: "https://capacity-app-ten.vercel.app/2-Red-Day-Protocol.pdf" },
     { title: "Part 3 · Capacity Rebuild Plan", sub: "Restoring energy without pressure", url: "https://capacity-app-ten.vercel.app/3-Capacity-Rebuild-Plan.pdf" },
     { title: "Part 4 · Yellow Day Protocol", sub: "Steady, sustainable days", url: "https://capacity-app-ten.vercel.app/4-Yellow-Day-Protocol.pdf" },
+    { title: "The Capacity Rebuild Guide", sub: "Nurse-informed habits to support your energy", url: "https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf" },
   ],
   program: { title: "The 28-Day Capacity Reset", sub: "A daily system to rebuild energy, boundaries & self-trust", url: "https://capacity-app-ten.vercel.app/5-28-Day-Capacity-Reset.pdf" },
   support: [
@@ -342,7 +343,7 @@ function Library({T,profile,content}){
     <p style={{fontSize:13,color:BASE.creamDim,lineHeight:1.5,marginBottom:24}}>Your complete self-regulation system. Everything in one place.</p>
 
     <SectionHead n="1" title="Core Framework" sub="The Capacity Method — four guides"/>
-    {LIBRARY.framework.map((g,i)=><LibTile key={i} T={T} icon={["❶","❷","❸","❹"][i]} title={g.title} sub={g.sub} url={g.url}/>)}
+    {LIBRARY.framework.map((g,i)=><LibTile key={i} T={T} icon={["❶","❷","❸","❹","✚"][i]} title={g.title} sub={g.sub} url={g.url}/>)}
 
     <SectionHead n="2" title="Implementation Program" sub="Put the framework into practice"/>
     <LibTile T={T} icon="↻" title={LIBRARY.program.title} sub={LIBRARY.program.sub} url={LIBRARY.program.url}/>
