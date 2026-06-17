@@ -1,16 +1,198 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Capacity Method</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body { background: #181410; color: #F2EADD; font-family: sans-serif; margin: 0; padding: 20px; }
+.container { max-width: 600px; margin: 0 auto; }
+h1 { text-align: center; margin-bottom: 10px; }
+.tabs { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
+.tab { padding: 10px 12px; background: #2A2219; border: 1px solid #444; border-radius: 6px; cursor: pointer; color: #F2EADD; }
+.tab.active { background: #D08560; color: #1a140f; }
+.section { background: #2A2219; padding: 20px; border-radius: 12px; border: 1px solid #444; margin: 20px 0; }
+input { padding: 10px; background: #352B20; border: 1px solid #444; color: #F2EADD; border-radius: 6px; width: 100%; margin: 10px 0; font-family: inherit; }
+button { padding: 12px; background: #D08560; color: #1a140f; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+a { color: #D08560; }
+.item { padding: 15px; background: #352B20; border-radius: 8px; margin: 10px 0; border: 1px solid #444; }
+.item a { display: block; margin-top: 10px; }
+p { line-height: 1.6; }
+</style>
 </head>
 <body>
 <div id="root"></div>
 <script>
 const e = React.createElement;
-ReactDOM.createRoot(document.getElementById("root")).render(
-  e("h1", null, "✅ React without Babel works!")
-);
+const { useState, useEffect } = React;
+
+const SUPABASE_URL = "https://gidezdugmwtemohkkeyr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bmt_uXzHvBlMTBpvkkRJPA_VpsEfPnp";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [tab, setTab] = useState("today");
+  const [capacity, setCapacity] = useState(50);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await db.auth.getSession();
+        if (s.data.session) {
+          setUser(s.data.session.user);
+          const p = await db.from("profiles").select("*").eq("id", s.data.session.user.id).single();
+          setProfile(p.data);
+        }
+      } catch (err) { console.log(err); }
+      setLoading(false);
+    })();
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      const res = await db.auth.signInWithPassword({ email, password });
+      if (res.data.user) {
+        setUser(res.data.user);
+        const p = await db.from("profiles").select("*").eq("id", res.data.user.id).single();
+        setProfile(p.data);
+        setEmail("");
+        setPassword("");
+      }
+    } catch (err) { alert("Login error: " + err.message); }
+  };
+
+  const handleSignUp = async () => {
+    try {
+      const res = await db.auth.signUp({ email, password });
+      if (res.data.user) {
+        await db.from("profiles").insert([{ id: res.data.user.id, email, has_membership: false }]);
+        setUser(res.data.user);
+        setEmail("");
+        setPassword("");
+      }
+    } catch (err) { alert("Signup error: " + err.message); }
+  };
+
+  const handleLogout = async () => {
+    await db.auth.signOut();
+    setUser(null);
+    setProfile(null);
+  };
+
+  if (loading) return e("div", {className: "container"}, e("p", null, "Loading..."));
+
+  if (!user) {
+    return e("div", {className: "container"},
+      e("h1", null, "The Capacity Method"),
+      e("div", {className: "section"},
+        e("h2", null, "Sign In or Sign Up"),
+        e("input", {type: "email", placeholder: "Email", value: email, onChange: (ev) => setEmail(ev.target.value)}),
+        e("input", {type: "password", placeholder: "Password", value: password, onChange: (ev) => setPassword(ev.target.value)}),
+        e("button", {onClick: handleLogin}, "Log In"),
+        e("button", {onClick: handleSignUp, style: {marginTop: "10px"}}, "Sign Up")
+      )
+    );
+  }
+
+  const hasLib = profile && profile.has_membership;
+
+  return e("div", {className: "container"},
+    e("h1", null, "The Capacity Method"),
+    e("div", {className: "tabs"},
+      e("span", {className: `tab ${tab === "today" ? "active" : ""}`, onClick: () => setTab("today")}, "Today"),
+      e("span", {className: `tab ${tab === "library" ? "active" : ""}`, onClick: () => setTab("library")}, "Library"),
+      e("span", {className: `tab ${tab === "shop" ? "active" : ""}`, onClick: () => setTab("shop")}, "Shop"),
+      e("span", {className: `tab ${tab === "about" ? "active" : ""}`, onClick: () => setTab("about")}, "About"),
+      e("button", {onClick: handleLogout, style: {marginLeft: "auto", width: "auto"}}, "Log Out")
+    ),
+
+    tab === "today" && e("div", {className: "section"},
+      e("h2", null, "Daily Check-In"),
+      e("p", null, "What's your capacity today?"),
+      e("input", {type: "range", min: "0", max: "100", value: capacity, onChange: (ev) => setCapacity(parseInt(ev.target.value)), style: {width: "100%"}}),
+      e("p", null, capacity + "% - " + (capacity <= 35 ? "Red Day" : capacity <= 70 ? "Yellow Day" : "Green Day")),
+      e("button", null, "Save Check-In")
+    ),
+
+    tab === "library" && e("div", {className: "section"},
+      e("h2", null, "The Capacity Method Library"),
+      hasLib ? e("div", null,
+        e("div", {className: "item"},
+          e("strong", null, "Part 1 - The Capacity Assessment"),
+          e("p", null, "Find your daily capacity"),
+          e("a", {href: "https://capacity-app-ten.vercel.app/1-Capacity-Assessment.pdf", target: "_blank"}, "Open →")
+        ),
+        e("div", {className: "item"},
+          e("strong", null, "Part 2 - Red Day Protocol"),
+          e("p", null, "What to do on low-capacity days"),
+          e("a", {href: "https://capacity-app-ten.vercel.app/2-Red-Day-Protocol.pdf", target: "_blank"}, "Open →")
+        ),
+        e("div", {className: "item"},
+          e("strong", null, "Part 3 - Capacity Rebuild Plan"),
+          e("p", null, "Restoring energy without pressure"),
+          e("a", {href: "https://capacity-app-ten.vercel.app/3-Capacity-Rebuild-Plan.pdf", target: "_blank"}, "Open →")
+        ),
+        e("div", {className: "item"},
+          e("strong", null, "Part 4 - Yellow Day Protocol"),
+          e("p", null, "Steady, sustainable days"),
+          e("a", {href: "https://capacity-app-ten.vercel.app/4-Yellow-Day-Protocol.pdf", target: "_blank"}, "Open →")
+        ),
+        e("div", {className: "item"},
+          e("strong", null, "28-Day Capacity Reset"),
+          e("p", null, "A daily system to rebuild energy"),
+          e("a", {href: "https://capacity-app-ten.vercel.app/5-28-Day-Capacity-Reset.pdf", target: "_blank"}, "Open →")
+        ),
+        e("div", {className: "item"},
+          e("strong", null, "The Capacity Rebuild Guide"),
+          e("p", null, "Nurse-informed habits to support your energy"),
+          e("a", {href: "https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf", target: "_blank"}, "Open →")
+        )
+      ) : e("div", {style: {textAlign: "center"}},
+        e("p", null, "Unlock the full Library to access all guides and resources."),
+        e("a", {href: "https://new-ray-wellness.myshopify.com/products/the-capacity-method-library", target: "_blank"},
+          e("button", null, "Unlock Library ($47)")
+        )
+      )
+    ),
+
+    tab === "shop" && e("div", {className: "section"},
+      e("h2", null, "The Capacity Method Shop"),
+      e("p", null, "Soft, oversized hoodies made for low-capacity days."),
+      e("div", {className: "item"},
+        e("strong", null, "Respectfully, No"),
+        e("p", null, "For the art of the boundary."),
+        e("a", {href: "https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover", target: "_blank"}, "$54 - Add to cart")
+      ),
+      e("div", {className: "item"},
+        e("strong", null, "Out of Office: Nervous System Maintenance"),
+        e("p", null, "A Red Day, worn proudly."),
+        e("a", {href: "https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover", target: "_blank"}, "$58 - Add to cart")
+      ),
+      e("div", {className: "item"},
+        e("strong", null, "Capacity is not Character"),
+        e("p", null, "The reminder, on your sleeve."),
+        e("a", {href: "https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt", target: "_blank"}, "$54 - Add to cart")
+      )
+    ),
+
+    tab === "about" && e("div", {className: "section"},
+      e("h2", null, "About Vanessa"),
+      e("p", null, e("strong", null, "Vanessa Parkin, RN")),
+      e("p", null, "\"Capacity is not character.\" For years, I expected the same output from myself regardless of what I was carrying. As a nurse and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short."),
+      e("p", null, "The Capacity Method began as a way to stop fighting reality and start working with it.")
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(e(App));
 </script>
 </body>
 </html>
