@@ -1,203 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Capacity Method</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-body { background: #181410; color: #F2EADD; font-family: sans-serif; margin: 0; padding: 20px; }
-.container { max-width: 600px; margin: 0 auto; }
-h1 { font-size: 28px; text-align: center; margin-bottom: 10px; }
-.tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-.tab { padding: 10px 15px; background: #2A2219; border: 1px solid #444; border-radius: 6px; cursor: pointer; color: #F2EADD; }
-.tab.active { background: #D08560; color: #1a140f; }
-.section { background: #2A2219; padding: 20px; border-radius: 12px; border: 1px solid #444; margin: 20px 0; }
-input { padding: 10px; background: #352B20; border: 1px solid #444; color: #F2EADD; border-radius: 6px; width: 100%; margin: 10px 0; }
-button { padding: 12px 20px; background: #D08560; color: #1a140f; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; }
-button:hover { opacity: 0.9; }
-a { color: #D08560; text-decoration: none; }
-.item { padding: 15px; background: #352B20; border-radius: 8px; margin: 10px 0; border: 1px solid #444; }
-</style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const React = window.React;
-const { useState, useEffect } = React;
-
+<h1>Testing Supabase Connection</h1>
+<p id="status">Connecting...</p>
+<script>
 const SUPABASE_URL = "https://gidezdugmwtemohkkeyr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bmt_uXzHvBlMTBpvkkRJPA_VpsEfPnp";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [tab, setTab] = useState("today");
-  const [capacity, setCapacity] = useState(50);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const session = await db.auth.getSession();
-      if (session.data.session) {
-        setUser(session.data.session.user);
-        loadProfile(session.data.session.user.id);
-      }
-    } catch (e) {
-      console.log("Auth check:", e);
-    }
-    setLoading(false);
-  };
-
-  const loadProfile = async (userId) => {
-    try {
-      const res = await db.from("profiles").select("*").eq("id", userId).single();
-      if (res.data) setProfile(res.data);
-    } catch (e) {
-      console.log("Profile load:", e);
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      const res = await db.auth.signInWithPassword({ email, password });
-      if (res.data.user) {
-        setUser(res.data.user);
-        loadProfile(res.data.user.id);
-        setEmail("");
-        setPassword("");
-      }
-    } catch (e) {
-      alert("Login failed: " + e.message);
-    }
-  };
-
-  const handleSignUp = async () => {
-    try {
-      const res = await db.auth.signUp({ email, password });
-      if (res.data.user) {
-        await db.from("profiles").insert([{ id: res.data.user.id, email, has_membership: false }]);
-        setUser(res.data.user);
-        setEmail("");
-        setPassword("");
-      }
-    } catch (e) {
-      alert("Signup failed: " + e.message);
-    }
-  };
-
-  const handleLogout = async () => {
-    await db.auth.signOut();
-    setUser(null);
-    setProfile(null);
-  };
-
-  if (loading) return <div className="container"><p>Loading...</p></div>;
-
-  if (!user) {
-    return (
-      <div className="container">
-        <h1>The Capacity Method</h1>
-        <div className="section">
-          <h2>Sign In or Sign Up</h2>
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button onClick={handleLogin}>Log In</button>
-          <button onClick={handleSignUp} style={{marginTop: "10px"}}>Sign Up</button>
-        </div>
-      </div>
-    );
-  }
-
-  const hasLibrary = profile && profile.has_membership;
-
-  return (
-    <div className="container">
-      <h1>The Capacity Method</h1>
-      <div className="tabs">
-        <span className={`tab ${tab === "today" ? "active" : ""}`} onClick={() => setTab("today")}>Today</span>
-        <span className={`tab ${tab === "library" ? "active" : ""}`} onClick={() => setTab("library")}>Library</span>
-        <span className={`tab ${tab === "shop" ? "active" : ""}`} onClick={() => setTab("shop")}>Shop</span>
-        <span className={`tab ${tab === "about" ? "active" : ""}`} onClick={() => setTab("about")}>About</span>
-        <button onClick={handleLogout} style={{marginLeft: "auto", width: "auto", padding: "10px 15px"}}>Log Out</button>
-      </div>
-
-      {tab === "today" && (
-        <div className="section">
-          <h2>Daily Check-In</h2>
-          <p>What's your capacity today?</p>
-          <input type="range" min="0" max="100" value={capacity} onChange={(e) => setCapacity(parseInt(e.target.value))} style={{width: "100%"}} />
-          <p>{capacity}% - {capacity <= 35 ? "Red Day" : capacity <= 70 ? "Yellow Day" : "Green Day"}</p>
-          <button>Save Check-In</button>
-        </div>
-      )}
-
-      {tab === "library" && (
-        <div className="section">
-          <h2>The Capacity Method Library</h2>
-          {hasLibrary ? (
-            <div>
-              <div className="item"><strong>Part 1 - The Capacity Assessment</strong><p>Find your daily capacity</p><a href="https://capacity-app-ten.vercel.app/1-Capacity-Assessment.pdf" target="_blank">Open →</a></div>
-              <div className="item"><strong>Part 2 - Red Day Protocol</strong><p>What to do on low-capacity days</p><a href="https://capacity-app-ten.vercel.app/2-Red-Day-Protocol.pdf" target="_blank">Open →</a></div>
-              <div className="item"><strong>Part 3 - Capacity Rebuild Plan</strong><p>Restoring energy without pressure</p><a href="https://capacity-app-ten.vercel.app/3-Capacity-Rebuild-Plan.pdf" target="_blank">Open →</a></div>
-              <div className="item"><strong>Part 4 - Yellow Day Protocol</strong><p>Steady, sustainable days</p><a href="https://capacity-app-ten.vercel.app/4-Yellow-Day-Protocol.pdf" target="_blank">Open →</a></div>
-              <div className="item"><strong>28-Day Capacity Reset</strong><p>A daily system to rebuild energy</p><a href="https://capacity-app-ten.vercel.app/5-28-Day-Capacity-Reset.pdf" target="_blank">Open →</a></div>
-              <div className="item"><strong>The Capacity Rebuild Guide</strong><p>Nurse-informed habits to support your energy</p><a href="https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf" target="_blank">Open →</a></div>
-            </div>
-          ) : (
-            <div style={{textAlign: "center"}}>
-              <p>Unlock the full Library to access all guides and resources.</p>
-              <a href="https://new-ray-wellness.myshopify.com/products/the-capacity-method-library" target="_blank"><button>Unlock Library ($47)</button></a>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "shop" && (
-        <div className="section">
-          <h2>The Capacity Method Shop</h2>
-          <p>Soft, oversized hoodies made for low-capacity days.</p>
-          <div className="item">
-            <strong>Respectfully, No</strong>
-            <p>For the art of the boundary.</p>
-            <a href="https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover" target="_blank"><button>$54 - Add to cart</button></a>
-          </div>
-          <div className="item">
-            <strong>Out of Office: Nervous System Maintenance</strong>
-            <p>A Red Day, worn proudly.</p>
-            <a href="https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover" target="_blank"><button>$58 - Add to cart</button></a>
-          </div>
-          <div className="item">
-            <strong>Capacity is not Character</strong>
-            <p>The reminder, on your sleeve.</p>
-            <a href="https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt" target="_blank"><button>$54 - Add to cart</button></a>
-          </div>
-        </div>
-      )}
-
-      {tab === "about" && (
-        <div className="section">
-          <h2>About Vanessa</h2>
-          <p><strong>Vanessa Parkin, RN</strong></p>
-          <p>"Capacity is not character." For years, I expected the same output from myself regardless of what I was carrying. As a nurse and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short.</p>
-          <p>The Capacity Method began as a way to stop fighting reality and start working with it.</p>
-        </div>
-      )}
-    </div>
-  );
+try {
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  document.getElementById("status").innerHTML = "✅ Supabase connected successfully";
+} catch (e) {
+  document.getElementById("status").innerHTML = "❌ Error: " + e.message;
 }
-
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
 </body>
 </html>
