@@ -19,23 +19,30 @@ input[type=range]{ -webkit-appearance:none; appearance:none; height:6px; border-
 input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#F2EADD; cursor:pointer; border:3px solid #D08560; }
 input[type=range]::-moz-range-thumb{ width:26px; height:26px; border-radius:50%; background:#F2EADD; cursor:pointer; border:3px solid #D08560; }
 a { text-decoration: none; }
-.fade-in { animation: fadeIn 0.5s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+.fade-in{ animation: fadeIn 0.5s ease both; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
 const e = React.createElement;
-const { useState, useEffect } = React;
+const { useState, useEffect, useMemo } = React;
 
 const SUPABASE_URL = "https://gidezdugmwtemohkkeyr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_bmt_uXzHvBlMTBpvkkRJPA_VpsEfPnp";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const BASE = { bg:"#181410", bg2:"#211B15", surface:"#2A2219", surface2:"#352B20", border:"rgba(217,199,172,0.12)", cream:"#F2EADD", creamDim:"#D9C7AC", taupe:"#A8987F", terracotta:"#D08560", terracottaDeep:"#B56A47" };
+const THEMES = {
+  none:{accent:BASE.terracotta,glow:"208,133,96",tint:"rgba(208,133,96,0.05)"},
+  red:{accent:"#DC6F5E",glow:"220,111,94",tint:"rgba(220,111,94,0.10)"},
+  yellow:{accent:"#E3AC5E",glow:"227,172,94",tint:"rgba(227,172,94,0.10)"},
+  green:{accent:"#94AC6E",glow:"148,172,110",tint:"rgba(148,172,110,0.10)"}
+};
+const colorFromPct = p => p<=35?"red":p<=70?"yellow":"green";
 
-function App() {
+function Root() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("today");
@@ -43,6 +50,7 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(true);
+  const [checkins, setCheckins] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -52,6 +60,8 @@ function App() {
           setUser(s.data.session.user);
           const p = await db.from("profiles").select("*").eq("id", s.data.session.user.id).single();
           if (p.data) setProfile(p.data);
+          const c = await db.from("checkins").select("*").eq("user_id", s.data.session.user.id).order("date", {ascending: false});
+          if (c.data) setCheckins(c.data);
         }
       } catch (err) { console.log(err); }
       setLoading(false);
@@ -60,7 +70,7 @@ function App() {
 
   const handleLogin = async () => {
     try {
-      const res = await db.auth.signInWithPassword({ email, password });
+      const res = await db.auth.signInWithPassword({email, password});
       if (res.data.user) {
         setUser(res.data.user);
         const p = await db.from("profiles").select("*").eq("id", res.data.user.id).single();
@@ -73,9 +83,9 @@ function App() {
 
   const handleSignUp = async () => {
     try {
-      const res = await db.auth.signUp({ email, password });
+      const res = await db.auth.signUp({email, password});
       if (res.data.user) {
-        await db.from("profiles").insert([{ id: res.data.user.id, email, has_membership: false }]);
+        await db.from("profiles").insert([{id: res.data.user.id, email, has_membership: false}]);
         setUser(res.data.user);
         setEmail("");
         setPassword("");
@@ -89,107 +99,154 @@ function App() {
     setProfile(null);
   };
 
-  const wrap = (content) => e("div", { style: { fontFamily: "'Nunito Sans', sans-serif", background: BASE.bg, color: BASE.cream, minHeight: "100vh", maxWidth: 440, margin: "0 auto" } }, content);
+  const handleSaveCheckin = async () => {
+    try {
+      await db.from("checkins").insert([{user_id: user.id, capacity, date: new Date().toISOString()}]);
+      const c = await db.from("checkins").select("*").eq("user_id", user.id).order("date", {ascending: false});
+      if (c.data) setCheckins(c.data);
+    } catch (err) { console.log(err); }
+  };
 
-  if (loading) return wrap(e("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh" } }, e("div", { style: { fontFamily: "'Pinyon Script', cursive", fontSize: 46, color: BASE.cream } }, "New Ray"), e("div", { style: { color: BASE.taupe, marginTop: 10, fontSize: 13 } }, "Loading…")));
+  const wrap = (content) => e("div", {style: {fontFamily: "'Nunito Sans', sans-serif", background: BASE.bg, color: BASE.cream, minHeight: "100vh", maxWidth: 440, margin: "0 auto"}}, content);
+
+  if (loading) return wrap(e("div", {style: {display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"100vh"}}, e("div", {style: {fontFamily: "'Pinyon Script', cursive", fontSize: 46, color: BASE.cream}}, "New Ray"), e("div", {style: {color: BASE.taupe, marginTop: 10, fontSize: 13}}, "Loading…")));
 
   if (!user) {
     return wrap(
-      e("div", { style: { minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 28px" } },
-        e("div", { style: { textAlign: "center", marginBottom: 14 } },
-          e("div", { style: { fontFamily: "'Pinyon Script', cursive", fontSize: 52, color: BASE.cream } }, "New Ray"),
-          e("div", { style: { fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: BASE.taupe, marginTop: 6 } }, "The Capacity Method")
+      e("div", {style: {minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 28px"}},
+        e("div", {style: {textAlign:"center", marginBottom:14}},
+          e("div", {style: {fontFamily:"'Pinyon Script',cursive", fontSize:52, color:BASE.cream}}, "New Ray"),
+          e("div", {style: {fontSize:11, letterSpacing:4, textTransform:"uppercase", color:BASE.taupe, marginTop:6}}, "The Capacity Method")
         ),
-        e("div", { style: { display: "flex", gap: 12, marginBottom: 24 } },
-          e("button", { onClick: () => { if (email && password) handleLogin(); }, style: { flex: 1, padding: 16, background: email && password ? BASE.terracotta : BASE.surface2, color: "#1a140f", border: "none", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 15 } }, "Log In"),
-          e("button", { onClick: () => { if (email && password) handleSignUp(); }, style: { flex: 1, padding: 16, background: email && password ? BASE.terracotta : BASE.surface2, color: "#1a140f", border: "none", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 15 } }, "Sign Up")
-        ),
-        e("input", { type: "email", placeholder: "Email", value: email, onChange: (ev) => setEmail(ev.target.value), style: { width: "100%", padding: 14, background: BASE.surface2, border: "1px solid " + BASE.border, color: BASE.cream, borderRadius: 8, fontSize: 14, marginBottom: 12 } }),
-        e("input", { type: "password", placeholder: "Password", value: password, onChange: (ev) => setPassword(ev.target.value), style: { width: "100%", padding: 14, background: BASE.surface2, border: "1px solid " + BASE.border, color: BASE.cream, borderRadius: 8, fontSize: 14 } })
+        e("input", {type:"email", placeholder:"Email", value:email, onChange:(ev)=>setEmail(ev.target.value), style:{width:"100%", padding:14, background:BASE.surface2, border:`1px solid ${BASE.border}`, color:BASE.cream, borderRadius:8, fontSize:14, marginBottom:12}}),
+        e("input", {type:"password", placeholder:"Password", value:password, onChange:(ev)=>setPassword(ev.target.value), style:{width:"100%", padding:14, background:BASE.surface2, border:`1px solid ${BASE.border}`, color:BASE.cream, borderRadius:8, fontSize:14, marginBottom:24}}),
+        e("div", {style:{display:"flex", gap:12, marginBottom:24}},
+          e("button", {onClick:handleLogin, style:{flex:1, padding:16, background:BASE.terracotta, color:"#1a140f", border:"none", borderRadius:12, cursor:"pointer", fontWeight:700, fontSize:15}}, "Log In"),
+          e("button", {onClick:handleSignUp, style:{flex:1, padding:16, background:BASE.terracotta, color:"#1a140f", border:"none", borderRadius:12, cursor:"pointer", fontWeight:700, fontSize:15}}, "Sign Up")
+        )
       )
     );
   }
 
+  const T = THEMES[colorFromPct(capacity)];
   const hasLib = profile && profile.has_membership;
-  const colorLabel = capacity <= 35 ? "Red Day" : capacity <= 70 ? "Yellow Day" : "Green Day";
+  const yellowDays = useMemo(() => checkins.filter(c => colorFromPct(c.capacity) === "yellow").length, [checkins]);
 
   return wrap(
-    e("div", { style: { padding: "18px 18px 0" } },
-      e("div", { style: { textAlign: "center", margin: "20px 0 8px", fontSize: 34, color: BASE.terracotta } }, "▦"),
-      e("h1", { style: { fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: 28, textAlign: "center", margin: "0 0 12px", color: BASE.cream } }, "The Capacity Method"),
-      e("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" } },
-        e("button", { onClick: () => setTab("today"), style: { flex: 1, padding: 10, background: tab === "today" ? BASE.terracotta : "transparent", color: tab === "today" ? "#1a140f" : BASE.cream, border: `1px solid ${tab === "today" ? BASE.terracotta : BASE.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Today"),
-        e("button", { onClick: () => setTab("library"), style: { flex: 1, padding: 10, background: tab === "library" ? BASE.terracotta : "transparent", color: tab === "library" ? "#1a140f" : BASE.cream, border: `1px solid ${tab === "library" ? BASE.terracotta : BASE.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Library"),
-        e("button", { onClick: () => setTab("shop"), style: { flex: 1, padding: 10, background: tab === "shop" ? BASE.terracotta : "transparent", color: tab === "shop" ? "#1a140f" : BASE.cream, border: `1px solid ${tab === "shop" ? BASE.terracotta : BASE.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Shop"),
-        e("button", { onClick: () => setTab("about"), style: { flex: 1, padding: 10, background: tab === "about" ? BASE.terracotta : "transparent", color: tab === "about" ? "#1a140f" : BASE.cream, border: `1px solid ${tab === "about" ? BASE.terracotta : BASE.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "About"),
-        e("button", { onClick: handleLogout, style: { flex: 1, padding: 10, background: "transparent", color: BASE.creamDim, border: `1px solid ${BASE.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Log Out")
+    e("div", {style:{padding:"18px 18px 0"}},
+      e("div", {style:{textAlign:"center", margin:"20px 0 8px", fontSize:34, color:T.accent}}, "▦"),
+      e("h1", {style:{fontFamily:"'Cormorant Garamond',serif", fontWeight:600, fontSize:26, textAlign:"center", margin:"0 0 8px"}}, "The Capacity Method"),
+      e("div", {style:{display:"flex", gap:8, marginBottom:20, flexWrap:"wrap"}},
+        e("button", {onClick:()=>setTab("today"), style:{flex:1, padding:10, background:tab==="today"?T.accent:"transparent", color:tab==="today"?"#1a140f":BASE.cream, border:`1px solid ${tab==="today"?T.accent:BASE.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600}}, "Today"),
+        e("button", {onClick:()=>setTab("trends"), style:{flex:1, padding:10, background:tab==="trends"?T.accent:"transparent", color:tab==="trends"?"#1a140f":BASE.cream, border:`1px solid ${tab==="trends"?T.accent:BASE.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600}}, "Trends"),
+        e("button", {onClick:()=>setTab("library"), style:{flex:1, padding:10, background:tab==="library"?T.accent:"transparent", color:tab==="library"?"#1a140f":BASE.cream, border:`1px solid ${tab==="library"?T.accent:BASE.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600}}, "Library"),
+        e("button", {onClick:()=>setTab("shop"), style:{flex:1, padding:10, background:tab==="shop"?T.accent:"transparent", color:tab==="shop"?"#1a140f":BASE.cream, border:`1px solid ${tab==="shop"?T.accent:BASE.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600}}, "Shop"),
+        e("button", {onClick:()=>setTab("about"), style:{flex:1, padding:10, background:tab==="about"?T.accent:"transparent", color:tab==="about"?"#1a140f":BASE.cream, border:`1px solid ${tab==="about"?T.accent:BASE.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600}}, "About"),
+        e("button", {onClick:handleLogout, style:{flex:1, padding:10, background:"transparent", color:BASE.creamDim, border:`1px solid ${BASE.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:600}}, "Log Out")
       ),
 
-      tab === "today" && e("div", { className: "fade-in", style: { padding: "18px 18px 0" } },
-        e("h2", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, marginBottom: 8 } }, "Daily Check-In"),
-        e("p", { style: { fontSize: 14, color: BASE.creamDim, lineHeight: 1.6, marginBottom: 20 } }, "What's your capacity today?"),
-        e("input", { type: "range", min: "0", max: "100", value: capacity, onChange: (ev) => setCapacity(parseInt(ev.target.value)), style: { width: "100%", margin: "20px 0" } }),
-        e("p", { style: { textAlign: "center", fontSize: 16, color: BASE.terracotta, marginBottom: 20 } }, capacity + "% · " + colorLabel),
-        e("button", { style: { width: "100%", padding: 14, background: BASE.terracotta, color: "#1a140f", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 } }, "Save Check-In")
+      tab === "today" && e("div", {className:"fade-in", style:{padding:"18px 18px 0"}},
+        e("div", {style:{textAlign:"center", margin:"20px 0 8px", fontSize:34, color:T.accent}}, "▦"),
+        e("h2", {style:{fontFamily:"'Cormorant Garamond',serif", fontWeight:600, fontSize:26, textAlign:"center", margin:"0 0 8px"}}, "The Capacity Method"),
+        e("p", {style:{fontSize:14, color:BASE.creamDim, textAlign:"center", lineHeight:1.6, marginBottom:22}}, "A complete self-regulation system for overwhelmed women. One purchase, yours for good."),
+        e("div", {style:{padding:"20px", borderRadius:16, background:BASE.surface, border:`1px solid ${BASE.border}`, marginBottom:22}},
+          e("input", {type:"range", min:"0", max:"100", value:capacity, onChange:(ev)=>setCapacity(parseInt(ev.target.value)), style:{width:"100%", margin:"15px 0"}}),
+          e("p", {style:{textAlign:"center", fontSize:16, color:T.accent, marginBottom:16}}, capacity+"%"),
+          e("button", {onClick:handleSaveCheckin, style:{width:"100%", padding:14, background:T.accent, color:"#1a140f", border:"none", borderRadius:10, cursor:"pointer", fontWeight:700, fontSize:14}}, "Save Check-In")
+        )
       ),
 
-      tab === "library" && e("div", { className: "fade-in", style: { padding: "18px 18px 0" } },
-        e("h2", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, marginBottom: 8 } }, "The Capacity Method Library"),
+      tab === "trends" && e("div", {className:"fade-in", style:{padding:"18px 18px 0"}},
+        e("div", {style:{textAlign:"center", margin:"20px 0 8px", fontSize:34, color:T.accent}}, "📊"),
+        e("h2", {style:{fontFamily:"'Cormorant Garamond',serif", fontWeight:600, fontSize:26, textAlign:"center", margin:"0 0 8px"}}, "Your Trends"),
+        e("div", {style:{padding:"16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, marginBottom:10}},
+          e("div", {style:{fontSize:12, color:BASE.taupe}}, "Yellow Days"),
+          e("div", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:30, fontWeight:600, color:"#E3AC5E", marginTop:2}}, yellowDays)
+        )
+      ),
+
+      tab === "library" && e("div", {className:"fade-in", style:{padding:"18px 18px 0"}},
+        e("div", {style:{textAlign:"center", margin:"20px 0 8px", fontSize:34, color:T.accent}}, "▦"),
+        e("h2", {style:{fontFamily:"'Cormorant Garamond',serif", fontWeight:600, fontSize:26, textAlign:"center", margin:"0 0 8px"}}, "The Capacity Method Library"),
         hasLib ? e("div", null,
-          [1,2,3,4,5,6].map(n => e("a", { key: n, href: n <= 5 ? `https://capacity-app-ten.vercel.app/${n}-Capacity-${"Assessment.pdf"}` : "https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf", target: "_blank", style: { display: "block", marginBottom: 10 } },
-            e("div", { style: { display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 14, background: BASE.surface, border: `1px solid ${BASE.border}`, cursor: "pointer" } },
-              e("span", { style: { width: 38, height: 38, borderRadius: 10, background: BASE.surface2, display: "flex", alignItems: "center", justifyContent: "center", color: BASE.terracotta, fontSize: 15, flexShrink: 0 } }, ["❶","❷","❸","❹","⏱","✚"][n-1]),
-              e("div", { style: { flex: 1 } },
-                e("div", { style: { fontSize: 14, fontWeight: 600, color: BASE.cream } }, ["Part 1 · The Capacity Assessment", "Part 2 · Red Day Protocol", "Part 3 · Capacity Rebuild Plan", "Part 4 · Yellow Day Protocol", "The 28-Day Capacity Reset", "The Capacity Rebuild Guide"][n-1]),
-                e("div", { style: { fontSize: 12, color: BASE.taupe, marginTop: 1 } }, ["Find your daily capacity", "What to do on low-capacity days", "Restoring energy without pressure", "Steady, sustainable days", "A daily system to rebuild energy", "Nurse-informed habits to support your energy"][n-1])
-              ),
-              e("span", { style: { color: BASE.taupe } }, "›")
+          e("a", {href:"https://capacity-app-ten.vercel.app/1-Capacity-Assessment.pdf", target:"_blank", style:{display:"block", marginBottom:10}},
+            e("div", {style:{display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, cursor:"pointer"}},
+              e("span", {style:{width:38, height:38, borderRadius:10, background:BASE.surface2, display:"flex", alignItems:"center", justifyContent:"center", color:T.accent, fontSize:15, flexShrink:0}}, "❶"),
+              e("div", {style:{flex:1}}, e("div", {style:{fontSize:14, fontWeight:600}}, "Part 1 · The Capacity Assessment"), e("div", {style:{fontSize:12, color:BASE.taupe, marginTop:1}}, "Find your daily capacity")),
+              e("span", {style:{color:BASE.taupe}}, "›")
             )
-          ))
-        ) : e("div", { style: { padding: "18px 18px 0", textAlign: "center" } },
-          e("p", { style: { fontSize: 14, color: BASE.creamDim, lineHeight: 1.6, marginBottom: 22 } }, "A complete self-regulation system for overwhelmed women. One purchase, yours for good."),
-          e("a", { href: "https://new-ray-wellness.myshopify.com/products/the-capacity-method-library", target: "_blank", style: { display: "block" } },
-            e("button", { style: { width: "100%", padding: 14, background: BASE.terracotta, color: "#1a140f", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 14 } }, "Unlock the Library · $47")
+          ),
+          e("a", {href:"https://capacity-app-ten.vercel.app/2-Red-Day-Protocol.pdf", target:"_blank", style:{display:"block", marginBottom:10}},
+            e("div", {style:{display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, cursor:"pointer"}},
+              e("span", {style:{width:38, height:38, borderRadius:10, background:BASE.surface2, display:"flex", alignItems:"center", justifyContent:"center", color:T.accent, fontSize:15, flexShrink:0}}, "❷"),
+              e("div", {style:{flex:1}}, e("div", {style:{fontSize:14, fontWeight:600}}, "Part 2 · Red Day Protocol"), e("div", {style:{fontSize:12, color:BASE.taupe, marginTop:1}}, "What to do on low-capacity days")),
+              e("span", {style:{color:BASE.taupe}}, "›")
+            )
+          ),
+          e("a", {href:"https://capacity-app-ten.vercel.app/3-Capacity-Rebuild-Plan.pdf", target:"_blank", style:{display:"block", marginBottom:10}},
+            e("div", {style:{display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, cursor:"pointer"}},
+              e("span", {style:{width:38, height:38, borderRadius:10, background:BASE.surface2, display:"flex", alignItems:"center", justifyContent:"center", color:T.accent, fontSize:15, flexShrink:0}}, "❸"),
+              e("div", {style:{flex:1}}, e("div", {style:{fontSize:14, fontWeight:600}}, "Part 3 · Capacity Rebuild Plan"), e("div", {style:{fontSize:12, color:BASE.taupe, marginTop:1}}, "Restoring energy without pressure")),
+              e("span", {style:{color:BASE.taupe}}, "›")
+            )
+          ),
+          e("a", {href:"https://capacity-app-ten.vercel.app/4-Yellow-Day-Protocol.pdf", target:"_blank", style:{display:"block", marginBottom:10}},
+            e("div", {style:{display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, cursor:"pointer"}},
+              e("span", {style:{width:38, height:38, borderRadius:10, background:BASE.surface2, display:"flex", alignItems:"center", justifyContent:"center", color:T.accent, fontSize:15, flexShrink:0}}, "❹"),
+              e("div", {style:{flex:1}}, e("div", {style:{fontSize:14, fontWeight:600}}, "Part 4 · Yellow Day Protocol"), e("div", {style:{fontSize:12, color:BASE.taupe, marginTop:1}}, "Steady, sustainable days")),
+              e("span", {style:{color:BASE.taupe}}, "›")
+            )
+          ),
+          e("a", {href:"https://capacity-app-ten.vercel.app/5-28-Day-Capacity-Reset.pdf", target:"_blank", style:{display:"block", marginBottom:10}},
+            e("div", {style:{display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, cursor:"pointer"}},
+              e("span", {style:{width:38, height:38, borderRadius:10, background:BASE.surface2, display:"flex", alignItems:"center", justifyContent:"center", color:T.accent, fontSize:15, flexShrink:0}}, "⏱"),
+              e("div", {style:{flex:1}}, e("div", {style:{fontSize:14, fontWeight:600}}, "The 28-Day Capacity Reset"), e("div", {style:{fontSize:12, color:BASE.taupe, marginTop:1}}, "A daily system to rebuild energy, boundaries & self-trust")),
+              e("span", {style:{color:BASE.taupe}}, "›")
+            )
+          ),
+          e("a", {href:"https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf", target:"_blank", style:{display:"block", marginBottom:10}},
+            e("div", {style:{display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:14, background:BASE.surface, border:`1px solid ${BASE.border}`, cursor:"pointer"}},
+              e("span", {style:{width:38, height:38, borderRadius:10, background:BASE.surface2, display:"flex", alignItems:"center", justifyContent:"center", color:T.accent, fontSize:15, flexShrink:0}}, "✚"),
+              e("div", {style:{flex:1}}, e("div", {style:{fontSize:14, fontWeight:600}}, "The Capacity Rebuild Guide"), e("div", {style:{fontSize:12, color:BASE.taupe, marginTop:1}}, "Nurse-informed habits to support your energy")),
+              e("span", {style:{color:BASE.taupe}}, "›")
+            )
           )
-        )
+        ) : e("div", {style:{padding:"18px 18px 0", textAlign:"center"}}, e("p", {style:{fontSize:14, color:BASE.creamDim, textAlign:"center", lineHeight:1.6, marginBottom:22}}, "A complete self-regulation system for overwhelmed women. One purchase, yours for good."), e("a", {href:"https://new-ray-wellness.myshopify.com/products/the-capacity-method-library", target:"_blank"}, e("button", {style:{width:"100%", textAlign:"center", padding:"16px", borderRadius:14, background:T.accent, color:"#1a140f", fontSize:15, fontWeight:700, border:"none", cursor:"pointer"}}, "Unlock the Library")))
       ),
 
-      tab === "shop" && e("div", { className: "fade-in", style: { padding: "18px 18px 0" } },
-        e("h2", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, marginBottom: 8 } }, "The Capacity Method Shop"),
-        e("p", { style: { fontSize: 13, color: BASE.creamDim, lineHeight: 1.5, marginBottom: 22 } }, "Wear the reminder. Soft, oversized, made for low-capacity days."),
-        ["Respectfully, No", "Out of Office: Nervous System Maintenance", "Capacity is not Character"].map((name, i) => e("a", { key: i, href: ["https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover", "https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover", "https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt"][i], target: "_blank", style: { display: "block" } },
-          e("div", { style: { borderRadius: 16, overflow: "hidden", background: BASE.surface, border: `1px solid ${BASE.border}`, marginBottom: 16 } },
-            e("div", { style: { height: 200, background: `linear-gradient(135deg, ${BASE.surface2}, ${BASE.bg2})`, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" } },
-              e("span", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: BASE.creamDim, textAlign: "center", lineHeight: 1.35 } }, `"${name}"`)
-            ),
-            e("div", { style: { padding: "16px 18px" } },
-              e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginBottom: 8 } },
-                e("div", { style: { fontSize: 15, fontWeight: 700, lineHeight: 1.3 } }, name),
-                e("div", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: BASE.terracotta, whiteSpace: "nowrap" } }, ["$54", "$58", "$54"][i])
-              ),
-              e("div", { style: { fontSize: 13, color: BASE.taupe, margin: "5px 0 14px" } }, ["For the art of the boundary.", "A Red Day, worn proudly.", "The reminder, on your sleeve."][i]),
-              e("button", { style: { width: "100%", textAlign: "center", padding: "13px", borderRadius: 12, background: BASE.terracotta, color: "#1a140f", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" } }, "Add to cart")
-            )
+      tab === "shop" && e("div", {className:"fade-in", style:{padding:"8px 18px 0"}},
+        e("h2", {style:{fontFamily:"'Cormorant Garamond',serif", fontWeight:500, fontSize:26, margin:"12px 0 4px"}}, "The Capacity Method Shop"),
+        e("p", {style:{fontSize:13, color:BASE.creamDim, lineHeight:1.5, marginBottom:22}}, "Wear the reminder. Soft, oversized, made for low-capacity days."),
+        e("a", {href:"https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover", target:"_blank"},
+          e("div", {style:{borderRadius:16, overflow:"hidden", background:BASE.surface, border:`1px solid ${BASE.border}`, marginBottom:16}},
+            e("div", {style:{height:200, background:`linear-gradient(135deg, ${BASE.surface2}, ${BASE.bg2})`, display:"flex", alignItems:"center", justifyContent:"center", padding:"0 24px"}}, e("span", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:22, color:BASE.creamDim, textAlign:"center", lineHeight:1.35}}, '"Respectfully, No"')),
+            e("div", {style:{padding:"16px 18px"}}, e("div", {style:{display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10}}, e("div", {style:{fontSize:15, fontWeight:700, lineHeight:1.3}}, "Respectfully, No"), e("div", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:20, color:T.accent, whiteSpace:"nowrap"}}, "$54")), e("div", {style:{fontSize:13, color:BASE.taupe, margin:"5px 0 14px"}}, "For the art of the boundary."), e("button", {style:{width:"100%", textAlign:"center", padding:"13px", borderRadius:12, background:T.accent, color:"#1a140f", fontSize:14, fontWeight:700, border:"none", cursor:"pointer"}}, "Add to cart"))
           )
-        ))
-      ),
-
-      tab === "about" && e("div", { className: "fade-in", style: { padding: "8px 18px 0" } },
-        e("div", { style: { textAlign: "center", margin: "10px 0 28px" } },
-          e("div", { style: { width: 92, height: 92, borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, ${BASE.terracotta}, ${BASE.terracottaDeep})`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Pinyon Script', cursive", fontSize: 40, color: "#1a140f" } }, "V"),
-          e("div", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 600 } }, "Vanessa Parkin, RN"),
-          e("div", { style: { fontSize: 12, color: BASE.taupe, letterSpacing: 1, textTransform: "uppercase", marginTop: 4 } }, "NURSE · MOTHER · FOUNDER")
         ),
-        e("p", { style: { fontFamily: "'Sacramento', cursive", fontSize: 34, textAlign: "center", color: BASE.terracotta, lineHeight: 1.3, marginBottom: 26 } }, '"Capacity is not character."'),
-        e("div", { style: { padding: "18px", borderRadius: 16, background: BASE.surface, border: `1px solid ${BASE.border}`, marginBottom: 14 } },
-          e("p", { style: { fontSize: 14, color: BASE.creamDim, lineHeight: 1.7 } }, "For years I expected the same output from myself regardless of what I was carrying. As a nurse, wife, and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short. The Capacity Method began as a way to stop fighting reality and start working with it.")
+        e("a", {href:"https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover", target:"_blank"},
+          e("div", {style:{borderRadius:16, overflow:"hidden", background:BASE.surface, border:`1px solid ${BASE.border}`, marginBottom:16}},
+            e("div", {style:{height:200, background:`linear-gradient(135deg, ${BASE.surface2}, ${BASE.bg2})`, display:"flex", alignItems:"center", justifyContent:"center", padding:"0 24px"}}, e("span", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:22, color:BASE.creamDim, textAlign:"center", lineHeight:1.35}}, '"Out of Office: Nervous System Maintenance"')),
+            e("div", {style:{padding:"16px 18px"}}, e("div", {style:{display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10}}, e("div", {style:{fontSize:15, fontWeight:700, lineHeight:1.3}}, "Out of Office: Nervous System Maintenance"), e("div", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:20, color:T.accent, whiteSpace:"nowrap"}}, "$58")), e("div", {style:{fontSize:13, color:BASE.taupe, margin:"5px 0 14px"}}, "A Red Day, worn proudly."), e("button", {style:{width:"100%", textAlign:"center", padding:"13px", borderRadius:12, background:T.accent, color:"#1a140f", fontSize:14, fontWeight:700, border:"none", cursor:"pointer"}}, "Add to cart"))
+          )
+        ),
+        e("a", {href:"https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt", target:"_blank"},
+          e("div", {style:{borderRadius:16, overflow:"hidden", background:BASE.surface, border:`1px solid ${BASE.border}`, marginBottom:16}},
+            e("div", {style:{height:200, background:`linear-gradient(135deg, ${BASE.surface2}, ${BASE.bg2})`, display:"flex", alignItems:"center", justifyContent:"center", padding:"0 24px"}}, e("span", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:22, color:BASE.creamDim, textAlign:"center", lineHeight:1.35}}, '"Capacity is not Character"')),
+            e("div", {style:{padding:"16px 18px"}}, e("div", {style:{display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10}}, e("div", {style:{fontSize:15, fontWeight:700, lineHeight:1.3}}, "Capacity is not Character"), e("div", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:20, color:T.accent, whiteSpace:"nowrap"}}, "$54")), e("div", {style:{fontSize:13, color:BASE.taupe, margin:"5px 0 14px"}}, "The reminder, on your sleeve."), e("button", {style:{width:"100%", textAlign:"center", padding:"13px", borderRadius:12, background:T.accent, color:"#1a140f", fontSize:14, fontWeight:700, border:"none", cursor:"pointer"}}, "Add to cart"))
+          )
         )
+      ),
+
+      tab === "about" && e("div", {className:"fade-in", style:{padding:"8px 18px 0"}},
+        e("div", {style:{textAlign:"center", margin:"10px 0 28px"}}, e("div", {style:{width:92, height:92, borderRadius:"50%", margin:"0 auto 14px", background:`linear-gradient(135deg, ${T.accent}, ${BASE.terracottaDeep})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Pinyon Script',cursive", fontSize:40, color:"#1a140f"}}, "V"), e("div", {style:{fontFamily:"'Cormorant Garamond',serif", fontSize:24, fontWeight:600}}, "Vanessa Parkin, RN"), e("div", {style:{fontSize:12, color:BASE.taupe, letterSpacing:1, textTransform:"uppercase"}}, "NURSE · MOTHER · FOUNDER")),
+        e("p", {style:{fontFamily:"'Sacramento',cursive", fontSize:34, textAlign:"center", color:T.accent, lineHeight:1.3, marginBottom:26}}, '"Capacity is not character."'),
+        e("div", {style:{padding:"18px", borderRadius:16, background:BASE.surface, border:`1px solid ${BASE.border}`, marginBottom:14}}, e("div", {style:{fontSize:14, fontWeight:600, marginBottom:8}}, "Why I built this"), e("p", {style:{fontSize:14, color:BASE.creamDim, lineHeight:1.7}}, "For years I expected the same output from myself regardless of what I was carrying. As a nurse, wife, and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short. The Capacity Method began as a way to stop fighting reality and start working with it."))
       )
     )
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+ReactDOM.createRoot(document.getElementById("root")).render(e(Root));
 </script>
 </body>
 </html>
