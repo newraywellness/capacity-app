@@ -2,25 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Capacity Method</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Capacity Method · New Ray Wellness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Sacramento&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body { background: #181410; color: #F2EADD; font-family: sans-serif; margin: 0; padding: 20px; }
-.container { max-width: 600px; margin: 0 auto; }
-h1 { text-align: center; margin-bottom: 10px; }
-.tabs { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
-.tab { padding: 10px 12px; background: #2A2219; border: 1px solid #444; border-radius: 6px; cursor: pointer; color: #F2EADD; }
-.tab.active { background: #D08560; color: #1a140f; }
-.section { background: #2A2219; padding: 20px; border-radius: 12px; border: 1px solid #444; margin: 20px 0; }
-input { padding: 10px; background: #352B20; border: 1px solid #444; color: #F2EADD; border-radius: 6px; width: 100%; margin: 10px 0; font-family: inherit; }
-button { padding: 12px; background: #D08560; color: #1a140f; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
-a { color: #D08560; }
-.item { padding: 15px; background: #352B20; border-radius: 8px; margin: 10px 0; border: 1px solid #444; }
-.item a { display: block; margin-top: 10px; }
-p { line-height: 1.6; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { background: #181410; color: #F2EADD; }
+body { font-family: 'Nunito Sans', sans-serif; padding: 0; }
+::-webkit-scrollbar { width: 0; }
+input { font-family: 'Nunito Sans', sans-serif; }
+input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #F2EADD; cursor: pointer; border: 3px solid #D08560; }
+input[type=range]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #F2EADD; cursor: pointer; border: 3px solid #D08560; }
+a { text-decoration: none; }
+.container { max-width: 640px; margin: 0 auto; padding: 0 18px; }
+h1 { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 600; text-align: center; margin: 20px 0 8px; }
+h2 { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
+p { font-size: 14px; line-height: 1.6; color: #D9C7AC; }
+.nav-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; padding: 0 0 8px; }
+.tab-btn { padding: 10px 15px; background: transparent; border: 1px solid rgba(217,199,172,0.12); border-radius: 10px; color: #F2EADD; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+.tab-btn.active { background: #D08560; border-color: #D08560; color: #1a140f; }
+.tab-btn:hover { border-color: #D08560; }
+.logout-btn { margin-left: auto; padding: 10px 15px; }
+.section { background: #2A2219; padding: 20px; border-radius: 16px; border: 1px solid rgba(217,199,172,0.12); margin: 20px 0; }
+.auth-box { padding: 24px; background: #2A2219; border-radius: 16px; border: 1px solid rgba(217,199,172,0.12); }
+input[type="email"], input[type="password"] { width: 100%; padding: 12px; background: #352B20; border: 1px solid rgba(217,199,172,0.12); border-radius: 8px; color: #F2EADD; font-size: 14px; margin-bottom: 12px; }
+button { width: 100%; padding: 14px; background: #D08560; color: #1a140f; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 15px; transition: opacity 0.2s; }
+button:hover { opacity: 0.9; }
+.library-grid { display: grid; gap: 12px; }
+.lib-tile { padding: 16px; background: #352B20; border: 1px solid rgba(217,199,172,0.12); border-radius: 14px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; }
+.lib-tile:hover { border-color: #D08560; }
+.lib-icon { width: 38px; height: 38px; background: #2A2219; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #D08560; font-size: 16px; flex-shrink: 0; }
+.lib-text { flex: 1; }
+.lib-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.lib-text small { font-size: 12px; color: #A8987F; }
+.lib-tile a { color: #D08560; font-weight: 600; }
+.paywall { text-align: center; padding: 24px; }
+.paywall p { color: #D9C7AC; margin-bottom: 16px; }
+.product-card { background: #352B20; border-radius: 16px; overflow: hidden; border: 1px solid rgba(217,199,172,0.12); margin-bottom: 16px; }
+.product-img { height: 200px; background: linear-gradient(135deg, #2A2219, #211B15); display: flex; align-items: center; justify-content: center; padding: 0 24px; }
+.product-img span { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: #D9C7AC; text-align: center; line-height: 1.4; }
+.product-info { padding: 16px 18px; }
+.product-name { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.product-name strong { font-size: 15px; font-weight: 700; }
+.product-price { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: #D08560; font-weight: 600; }
+.product-desc { font-size: 13px; color: #A8987F; margin-bottom: 14px; }
+.about-section { padding: 24px 0; }
+.about-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; margin-bottom: 12px; }
+.capacity-display { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: #D08560; font-weight: 600; margin: 16px 0; text-align: center; }
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -49,7 +85,7 @@ function App() {
         if (s.data.session) {
           setUser(s.data.session.user);
           const p = await db.from("profiles").select("*").eq("id", s.data.session.user.id).single();
-          setProfile(p.data);
+          if (p.data) setProfile(p.data);
         }
       } catch (err) { console.log(err); }
       setLoading(false);
@@ -62,11 +98,11 @@ function App() {
       if (res.data.user) {
         setUser(res.data.user);
         const p = await db.from("profiles").select("*").eq("id", res.data.user.id).single();
-        setProfile(p.data);
+        if (p.data) setProfile(p.data);
         setEmail("");
         setPassword("");
       }
-    } catch (err) { alert("Login error: " + err.message); }
+    } catch (err) { alert("Login failed"); }
   };
 
   const handleSignUp = async () => {
@@ -78,7 +114,7 @@ function App() {
         setEmail("");
         setPassword("");
       }
-    } catch (err) { alert("Signup error: " + err.message); }
+    } catch (err) { alert("Signup failed"); }
   };
 
   const handleLogout = async () => {
@@ -87,107 +123,175 @@ function App() {
     setProfile(null);
   };
 
-  if (loading) return e("div", {className: "container"}, e("p", null, "Loading..."));
+  if (loading) return e("div", {className: "container"}, e("p", {style: {marginTop: "40px"}}, "Loading..."));
 
   if (!user) {
     return e("div", {className: "container"},
-      e("h1", null, "The Capacity Method"),
-      e("div", {className: "section"},
-        e("h2", null, "Sign In or Sign Up"),
+      e("h1", {style: {marginTop: "40px"}}, "The Capacity Method"),
+      e("p", {style: {textAlign: "center", marginBottom: "30px"}}, "Permission to ease up 🤍"),
+      e("div", {className: "auth-box"},
         e("input", {type: "email", placeholder: "Email", value: email, onChange: (ev) => setEmail(ev.target.value)}),
         e("input", {type: "password", placeholder: "Password", value: password, onChange: (ev) => setPassword(ev.target.value)}),
-        e("button", {onClick: handleLogin}, "Log In"),
-        e("button", {onClick: handleSignUp, style: {marginTop: "10px"}}, "Sign Up")
+        e("button", {onClick: handleLogin, style: {marginBottom: "10px"}}, "Log In"),
+        e("button", {onClick: handleSignUp}, "Sign Up")
       )
     );
   }
 
   const hasLib = profile && profile.has_membership;
+  const capLabel = capacity <= 35 ? "🔴 Red Day" : capacity <= 70 ? "🟡 Yellow Day" : "🟢 Green Day";
 
   return e("div", {className: "container"},
-    e("h1", null, "The Capacity Method"),
-    e("div", {className: "tabs"},
-      e("span", {className: `tab ${tab === "today" ? "active" : ""}`, onClick: () => setTab("today")}, "Today"),
-      e("span", {className: `tab ${tab === "library" ? "active" : ""}`, onClick: () => setTab("library")}, "Library"),
-      e("span", {className: `tab ${tab === "shop" ? "active" : ""}`, onClick: () => setTab("shop")}, "Shop"),
-      e("span", {className: `tab ${tab === "about" ? "active" : ""}`, onClick: () => setTab("about")}, "About"),
-      e("button", {onClick: handleLogout, style: {marginLeft: "auto", width: "auto"}}, "Log Out")
-    ),
-
-    tab === "today" && e("div", {className: "section"},
-      e("h2", null, "Daily Check-In"),
-      e("p", null, "What's your capacity today?"),
-      e("input", {type: "range", min: "0", max: "100", value: capacity, onChange: (ev) => setCapacity(parseInt(ev.target.value)), style: {width: "100%"}}),
-      e("p", null, capacity + "% - " + (capacity <= 35 ? "Red Day" : capacity <= 70 ? "Yellow Day" : "Green Day")),
-      e("button", null, "Save Check-In")
-    ),
-
-    tab === "library" && e("div", {className: "section"},
-      e("h2", null, "The Capacity Method Library"),
-      hasLib ? e("div", null,
-        e("div", {className: "item"},
-          e("strong", null, "Part 1 - The Capacity Assessment"),
-          e("p", null, "Find your daily capacity"),
-          e("a", {href: "https://capacity-app-ten.vercel.app/1-Capacity-Assessment.pdf", target: "_blank"}, "Open →")
-        ),
-        e("div", {className: "item"},
-          e("strong", null, "Part 2 - Red Day Protocol"),
-          e("p", null, "What to do on low-capacity days"),
-          e("a", {href: "https://capacity-app-ten.vercel.app/2-Red-Day-Protocol.pdf", target: "_blank"}, "Open →")
-        ),
-        e("div", {className: "item"},
-          e("strong", null, "Part 3 - Capacity Rebuild Plan"),
-          e("p", null, "Restoring energy without pressure"),
-          e("a", {href: "https://capacity-app-ten.vercel.app/3-Capacity-Rebuild-Plan.pdf", target: "_blank"}, "Open →")
-        ),
-        e("div", {className: "item"},
-          e("strong", null, "Part 4 - Yellow Day Protocol"),
-          e("p", null, "Steady, sustainable days"),
-          e("a", {href: "https://capacity-app-ten.vercel.app/4-Yellow-Day-Protocol.pdf", target: "_blank"}, "Open →")
-        ),
-        e("div", {className: "item"},
-          e("strong", null, "28-Day Capacity Reset"),
-          e("p", null, "A daily system to rebuild energy"),
-          e("a", {href: "https://capacity-app-ten.vercel.app/5-28-Day-Capacity-Reset.pdf", target: "_blank"}, "Open →")
-        ),
-        e("div", {className: "item"},
-          e("strong", null, "The Capacity Rebuild Guide"),
-          e("p", null, "Nurse-informed habits to support your energy"),
-          e("a", {href: "https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf", target: "_blank"}, "Open →")
-        )
-      ) : e("div", {style: {textAlign: "center"}},
-        e("p", null, "Unlock the full Library to access all guides and resources."),
-        e("a", {href: "https://new-ray-wellness.myshopify.com/products/the-capacity-method-library", target: "_blank"},
-          e("button", null, "Unlock Library ($47)")
-        )
-      )
-    ),
-
-    tab === "shop" && e("div", {className: "section"},
-      e("h2", null, "The Capacity Method Shop"),
-      e("p", null, "Soft, oversized hoodies made for low-capacity days."),
-      e("div", {className: "item"},
-        e("strong", null, "Respectfully, No"),
-        e("p", null, "For the art of the boundary."),
-        e("a", {href: "https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover", target: "_blank"}, "$54 - Add to cart")
+    e("div", {style: {paddingTop: "20px"}},
+      e("h1", null, "The Capacity Method"),
+      e("p", {style: {textAlign: "center", marginBottom: "20px"}}, "Permission to ease up 🤍"),
+      
+      e("div", {className: "nav-bar"},
+        e("button", {className: `tab-btn ${tab === "today" ? "active" : ""}`, onClick: () => setTab("today")}, "Today"),
+        e("button", {className: `tab-btn ${tab === "library" ? "active" : ""}`, onClick: () => setTab("library")}, "Library"),
+        e("button", {className: `tab-btn ${tab === "shop" ? "active" : ""}`, onClick: () => setTab("shop")}, "Shop"),
+        e("button", {className: `tab-btn ${tab === "about" ? "active" : ""}`, onClick: () => setTab("about")}, "About"),
+        e("button", {className: "tab-btn logout-btn", onClick: handleLogout}, "Log Out")
       ),
-      e("div", {className: "item"},
-        e("strong", null, "Out of Office: Nervous System Maintenance"),
-        e("p", null, "A Red Day, worn proudly."),
-        e("a", {href: "https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover", target: "_blank"}, "$58 - Add to cart")
-      ),
-      e("div", {className: "item"},
-        e("strong", null, "Capacity is not Character"),
-        e("p", null, "The reminder, on your sleeve."),
-        e("a", {href: "https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt", target: "_blank"}, "$54 - Add to cart")
-      )
-    ),
 
-    tab === "about" && e("div", {className: "section"},
-      e("h2", null, "About Vanessa"),
-      e("p", null, e("strong", null, "Vanessa Parkin, RN")),
-      e("p", null, "\"Capacity is not character.\" For years, I expected the same output from myself regardless of what I was carrying. As a nurse and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short."),
-      e("p", null, "The Capacity Method began as a way to stop fighting reality and start working with it.")
+      tab === "today" && e("div", {className: "section fade-in"},
+        e("h2", null, "Daily Check-In"),
+        e("p", null, "What's your capacity today?"),
+        e("input", {type: "range", min: "0", max: "100", value: capacity, onChange: (ev) => setCapacity(parseInt(ev.target.value)), style: {width: "100%", margin: "20px 0"}}),
+        e("div", {className: "capacity-display"}, capLabel),
+        e("p", {style: {textAlign: "center", color: "#A8987F", marginBottom: "16px"}}, capacity + "% · " + (capacity <= 35 ? "Survive & stabilize" : capacity <= 70 ? "Steady progress" : "Plan, grow, build")),
+        e("button", null, "Save Check-In")
+      ),
+
+      tab === "library" && e("div", {className: "section fade-in"},
+        e("h2", null, "The Capacity Method Library"),
+        hasLib ? e("div", {className: "library-grid"},
+          e("a", {href: "https://capacity-app-ten.vercel.app/1-Capacity-Assessment.pdf", target: "_blank"},
+            e("div", {className: "lib-tile"},
+              e("div", {className: "lib-icon"}, "❶"),
+              e("div", {className: "lib-text"},
+                e("strong", null, "Part 1 · The Capacity Assessment"),
+                e("small", null, "Find your daily capacity")
+              ),
+              e("span", {style: {color: "#A8987F"}}, "›")
+            )
+          ),
+          e("a", {href: "https://capacity-app-ten.vercel.app/2-Red-Day-Protocol.pdf", target: "_blank"},
+            e("div", {className: "lib-tile"},
+              e("div", {className: "lib-icon"}, "❷"),
+              e("div", {className: "lib-text"},
+                e("strong", null, "Part 2 · Red Day Protocol"),
+                e("small", null, "What to do on low-capacity days")
+              ),
+              e("span", {style: {color: "#A8987F"}}, "›")
+            )
+          ),
+          e("a", {href: "https://capacity-app-ten.vercel.app/3-Capacity-Rebuild-Plan.pdf", target: "_blank"},
+            e("div", {className: "lib-tile"},
+              e("div", {className: "lib-icon"}, "❸"),
+              e("div", {className: "lib-text"},
+                e("strong", null, "Part 3 · Capacity Rebuild Plan"),
+                e("small", null, "Restoring energy without pressure")
+              ),
+              e("span", {style: {color: "#A8987F"}}, "›")
+            )
+          ),
+          e("a", {href: "https://capacity-app-ten.vercel.app/4-Yellow-Day-Protocol.pdf", target: "_blank"},
+            e("div", {className: "lib-tile"},
+              e("div", {className: "lib-icon"}, "❹"),
+              e("div", {className: "lib-text"},
+                e("strong", null, "Part 4 · Yellow Day Protocol"),
+                e("small", null, "Steady, sustainable days")
+              ),
+              e("span", {style: {color: "#A8987F"}}, "›")
+            )
+          ),
+          e("a", {href: "https://capacity-app-ten.vercel.app/5-28-Day-Capacity-Reset.pdf", target: "_blank"},
+            e("div", {className: "lib-tile"},
+              e("div", {className: "lib-icon"}, "⏱"),
+              e("div", {className: "lib-text"},
+                e("strong", null, "The 28-Day Capacity Reset"),
+                e("small", null, "A simple daily rebuild program")
+              ),
+              e("span", {style: {color: "#A8987F"}}, "›")
+            )
+          ),
+          e("a", {href: "https://capacity-app-ten.vercel.app/6-Capacity-Rebuild-Guide.pdf", target: "_blank"},
+            e("div", {className: "lib-tile"},
+              e("div", {className: "lib-icon"}, "✚"),
+              e("div", {className: "lib-text"},
+                e("strong", null, "The Capacity Rebuild Guide"),
+                e("small", null, "Nurse-informed habits to support your energy")
+              ),
+              e("span", {style: {color: "#A8987F"}}, "›")
+            )
+          )
+        ) : e("div", {className: "paywall"},
+          e("p", {style: {fontSize: "16px", marginBottom: "24px"}}, "Unlock the full Library to access all guides and resources."),
+          e("a", {href: "https://new-ray-wellness.myshopify.com/products/the-capacity-method-library", target: "_blank"},
+            e("button", null, "Unlock the Library — $47")
+          )
+        )
+      ),
+
+      tab === "shop" && e("div", {className: "section fade-in"},
+        e("h2", null, "The Capacity Method Shop"),
+        e("p", null, "Wear the reminder. Soft, oversized, made for low-capacity days."),
+        e("div", {className: "product-card"},
+          e("div", {className: "product-img"}, e("span", null, "\"Respectfully, No\"")),
+          e("div", {className: "product-info"},
+            e("div", {className: "product-name"},
+              e("strong", null, "Respectfully, No"),
+              e("span", {className: "product-price"}, "$54")
+            ),
+            e("p", {className: "product-desc"}, "For the art of the boundary."),
+            e("a", {href: "https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover", target: "_blank"},
+              e("button", null, "Add to cart")
+            )
+          )
+        ),
+        e("div", {className: "product-card"},
+          e("div", {className: "product-img"}, e("span", null, "\"Out of Office:\nNervous System Maintenance\"")),
+          e("div", {className: "product-info"},
+            e("div", {className: "product-name"},
+              e("strong", null, "Out of Office: Nervous System Maintenance"),
+              e("span", {className: "product-price"}, "$58")
+            ),
+            e("p", {className: "product-desc"}, "A Red Day, worn proudly."),
+            e("a", {href: "https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover", target: "_blank"},
+              e("button", null, "Add to cart")
+            )
+          )
+        ),
+        e("div", {className: "product-card"},
+          e("div", {className: "product-img"}, e("span", null, "\"Capacity is\nnot Character\"")),
+          e("div", {className: "product-info"},
+            e("div", {className: "product-name"},
+              e("strong", null, "Capacity is not Character"),
+              e("span", {className: "product-price"}, "$54")
+            ),
+            e("p", {className: "product-desc"}, "The reminder, on your sleeve."),
+            e("a", {href: "https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt", target: "_blank"},
+              e("button", null, "Add to cart")
+            )
+          )
+        )
+      ),
+
+      tab === "about" && e("div", {className: "section fade-in"},
+        e("div", {className: "about-section"},
+          e("div", {style: {textAlign: "center", marginBottom: "28px"}},
+            e("div", {style: {width: "92px", height: "92px", borderRadius: "50%", margin: "0 auto 14px", background: "linear-gradient(135deg, #D08560, #B56A47)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Pinyon Script', cursive", fontSize: "40px", color: "#1a140f"}}, "V")
+          ),
+          e("h2", {style: {textAlign: "center", fontFamily: "'Cormorant Garamond', serif", fontSize: "24px"}}, "Vanessa Parkin, RN"),
+          e("p", {style: {textAlign: "center", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", color: "#A8987F", marginBottom: "26px"}}, "NURSE · MOTHER · FOUNDER"),
+          e("p", {style: {fontFamily: "'Sacramento', cursive", fontSize: "34px", textAlign: "center", color: "#D08560", lineHeight: "1.3", marginBottom: "26px"}}, ""Capacity is not character.""),
+          e("p", {style: {marginBottom: "16px"}}, "For years I expected the same output from myself regardless of what I was carrying. As a nurse, wife, and mother of two under two, I kept measuring myself against my best days — and shaming myself when I fell short."),
+          e("p", null, "The Capacity Method began as a way to stop fighting reality and start working with it.")
+        )
+      ),
+
+      e("div", {style: {height: "40px"}})
     )
   );
 }
