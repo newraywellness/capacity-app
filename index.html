@@ -3,15 +3,14 @@
 <head>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
-function TestApp() {
-  return <h1>✅ React and Babel are working!</h1>;
-}
-ReactDOM.createRoot(document.getElementById("root")).render(<TestApp />);
+<script>
+const e = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(
+  e("h1", null, "✅ React without Babel works!")
+);
 </script>
 </body>
 </html>
