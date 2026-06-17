@@ -172,14 +172,14 @@ function Root() {
     content = e("div", {className:"fade-in",style:{padding:"8px 18px 0"}},
       e("h2", {style:{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:26,margin:"12px 0 4px"}}, "The Capacity Method Shop"),
       e("p", {style:{fontSize:13,color:BASE.creamDim,lineHeight:1.5,marginBottom:22}}, "Wear the reminder. Soft, oversized, made for low-capacity days."),
-      ["Respectfully, No","Out of Office: Nervous System Maintenance","Capacity is not Character"].map((name,i) =>
+      ["Respectfully, No","Out of Office: Nervous System Maintenance","Capacity is not Character"].map((name,i) => (
         e("a", {key:i, href:["https://new-ray-wellness.myshopify.com/products/hoodie-respectfully-no-floral-graphic-pullover","https://new-ray-wellness.myshopify.com/products/minimalist-hoodie-subtle-embossed-text-crew-pullover","https://new-ray-wellness.myshopify.com/products/capacity-is-not-character-hoodie-new-ray-wellness-motivational-sweatshirt"][i],target:"_blank",style:{display:"block"}},
           e("div", {style:{borderRadius:16,overflow:"hidden",background:BASE.surface,border:`1px solid ${BASE.border}`,marginBottom:16}},
             e("div", {style:{height:200,background:`linear-gradient(135deg, ${BASE.surface2}, ${BASE.bg2})`,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px"}}, e("span", {style:{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:BASE.creamDim,textAlign:"center",lineHeight:1.35}}, '"' + name + '"')),
             e("div", {style:{padding:"16px 18px"}}, e("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:10}}, e("div", {style:{fontSize:15,fontWeight:700,lineHeight:1.3}}, name), e("div", {style:{fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:T.accent,whiteSpace:"nowrap"}}, ["$54","$58","$54"][i])), e("div", {style:{fontSize:13,color:BASE.taupe,margin:"5px 0 14px"}}, ["For the art of the boundary.","A Red Day, worn proudly.","The reminder, on your sleeve."][i]), e("button", {style:{width:"100%",textAlign:"center",padding:"13px",borderRadius:12,background:T.accent,color:"#1a140f",fontSize:14,fontWeight:700,border:"none",cursor:"pointer"}}, "Add to cart"))
           )
         )
-      )
+      ))
     );
   } else if (tab === "about") {
     content = e("div", {className:"fade-in",style:{padding:"8px 18px 0"}},
